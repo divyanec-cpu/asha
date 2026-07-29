@@ -2,6 +2,43 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-07-30 — Phase 3: the mock log and the DILR set sheet
+
+**What changed**
+- `supabase/migrations/0006_set_tally.sql` — `num_attempted` and `num_correct` on `set_attempts`, both nullable, with a check constraint enforcing `correct ≤ attempted ≤ num_questions`. Added because `marks_earned` alone is a derivation: without the raw counts, marks cannot be recomputed from a corrected `exam_configs` row, and "answered 4 of 4, got 4 right" becomes indistinguishable from "answered 1 of 4, got 1 right".
+- `src/lib/marking.ts` — pure functions, no DB and no React. `setMarks`, `reconcileSectionScore`, `questionCoverage`. Every figure reads a scheme out of `exam_configs`; nothing is hardcoded.
+- `/log` — attempts list, unfinished ones surfaced first under "PICK UP WHERE YOU LEFT OFF".
+- `/log/new` — attempt creation. No such screen exists in the handoff (the mockups begin at "SimCAT 12 · DILR"), so it was designed to the same visual language.
+- `/log/[attemptId]/dilr` — the set sheet (design 1g).
+- `src/lib/supabase/relations.ts` — `one()`, which narrows an embedded to-one relation. supabase-js types every embed as an array without generated types, so `attempt.mock_sources.title` fails to typecheck though it works at runtime. Narrowing rather than casting, since a cast would lie.
+
+**Design decisions**
+- **Completeness is question accounting, not a set count.** The sheet shows `18 / 22` and is done when set sizes sum to `sections.question_count`. Nothing hardcodes five sets — the DILR set count is an exam fact that has varied — and over-counting is flagged as a probable duplicate.
+- **Which section is "DILR" is resolved from data.** The set-based section is whichever owns `set_archetype` taxonomy nodes. The URL says `dilr` because that is what a CAT aspirant calls it, but no query depends on the name.
+- **Section scores are entered and cross-checked.** The student types them off their result page; ASHA also totals the logged rows and flags a gap. A forgotten set is otherwise invisible, and skipped sets are the entire basis of the set-selection engine.
+- **A known limitation, deliberately accepted.** Set-level logging cannot tell which questions were TITA, so `setMarks` applies MCQ negative marking throughout and is therefore conservative. That is why the cross-check carries a tolerance of one correct answer's worth rather than demanding an exact match, and why the mismatch card says so rather than implying the student mis-entered something.
+- **Deviation from the mockup.** Design 1g renders sets as `4/4 +12` and `1/4 −1`; those cannot both be correct/total, since 1 correct of 4 under +3/−1 is 0 marks, not −1. Answered and right are captured as separate counters and marks computed from config, displayed as `0/1 of 4`.
+
+**Verified end to end against the live project**
+Five sets logged on a real attempt, covering every verdict:
+
+| Set | Shape | Verdict | Stored |
+|---|---|---|---|
+| 1 | Games & tournaments | `cleared` | att 4, cor 4, ord 1, 540s, **+12** |
+| 2 | Scatter plot | `attempted_failed` | att 1, cor 0, ord 2, 720s, **−1** |
+| 3 | Arrangements | `abandoned_midway` | att 0, cor 0, ord 3, 360s, **0** |
+| 4 | Venn diagrams | `skipped_would_have_cleared` | att/cor **null**, chosen false, 60s scan |
+| 5 | Quant-heavy DI caselet | `skipped_correctly` | att/cor **null**, chosen false, 0s |
+
+Totals: 22 questions, 11 marks. Row 4 is the one `decisions.md` calls the most valuable in the database — a set walked past that would have been cleared, with its scanning time recorded — and it now exists. Also confirmed: `/log` resumability, marks computed from `exam_configs`, the cross-check firing at completion ("your sets come to 11 marks, but you reported 27"), and the skip-regret note carrying its threshold caveat ("needs 5 skipped sets across 3 mocks before ASHA will call it anything").
+
+**Three defects found by running it, all fixed**
+- **The mismatch warning fired with zero sets logged.** True but useless — until every question is accounted for the running total is *supposed* to be short, and a warning that cries wolf trains the student to ignore the one warning here that matters. Now gated on completeness.
+- **"Started, then bailed" was unloggable.** Validation required at least one answer on an opened set, but abandoning after six minutes without committing an answer is a real outcome — it is design 1g's own third card (`0/5`).
+- **`~0 MIN`** read as an approximation of nothing. Zero is exact — they didn't look at it — so it now reads "NO TIME SPENT".
+
+**Process note:** migration `0006` took three rounds to land. The first failure surfaced as PostgREST's `Could not find the 'num_attempted' column ... in the schema cache`, which is ambiguous between a stale API cache and a missing column. `notify pgrst, 'reload schema'` disambiguated it, after which Postgres reported `42703 column does not exist` — definitive. Worth remembering: when PostgREST reports a missing column, reload the cache before assuming either cause. Also, pasting the SQL inline into chat rather than pointing at a file path is what finally got it run.
+
 ## 2026-07-29 — Phase 2: phone-OTP auth and the profile screen
 
 **What changed**

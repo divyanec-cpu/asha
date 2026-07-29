@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import AuthFlow from "./AuthFlow";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -45,10 +46,18 @@ export default async function Page() {
         You&rsquo;re signed in, {profile.name}
       </p>
       <p className="text-[13.5px] leading-relaxed text-mute-500 text-pretty">
-        Home, the set-selection playbook and mock logging are still being built. Nothing here is
+        Home, the set-selection playbook and the trend view are still being built. Nothing here is
         showing you numbers yet &mdash; when it does, every one of them will be your own.
       </p>
-      <p className="font-mono text-[11px] tracking-widest text-mute-400">PHASE 2 · AUTH COMPLETE</p>
+      <Link
+        href="/log"
+        className="mt-1 rounded-[13px] bg-brass py-4 text-center text-[15px] font-semibold text-white"
+      >
+        Log a mock
+      </Link>
+      <p className="font-mono text-[11px] tracking-widest text-mute-400">
+        PHASE 3 · DILR SET SHEET LIVE
+      </p>
     </main>
   );
 }

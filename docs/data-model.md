@@ -117,6 +117,7 @@ Defined and seeded, but nothing reads them in v1. Listed so no one wires a UI to
 - **`0002_taxonomy.sql`** — `exams`, `exam_configs`, `sections`, `question_types`. Read-for-authenticated RLS, no write policies.
 - **`0003_attempts.sql`** — `mock_sources`, `mock_attempts`, `section_attempts`, `set_attempts`, `question_attempts`. Owner-only RLS, inherited by join down the chain.
 - **`0004_insights.sql`** — `insights` with not-null evidence columns; `revision_queue` reserved.
+- **`0006_set_tally.sql`** *(2026-07-30)* — `num_attempted` and `num_correct` on `set_attempts`, both nullable (a set never opened has no tally), with `set_attempts_tally_bounds` enforcing `correct ≤ attempted ≤ num_questions`. Additive and reversible. Exists so marks stay recomputable from a corrected `exam_configs` row, and so "answered 4 of 4" is distinguishable from "answered 1 of 4".
 - **`0005_passage_domain.sql`** *(2026-07-29)* — extends `question_types.kind` with `passage_domain` and reclassifies the 7 already-seeded VARC domain leaves; adds nullable `passage_domain_id` to `question_attempts` with a partial index; adds `assert_passage_domain_valid()` and its trigger. Additive and reversible — the rollback is written out at the foot of the migration file.
 
 ## Functions (continued)
