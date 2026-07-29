@@ -1,26 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
+
+// Fonts come from Fontsource (npm), NOT next/font/google.
+//
+// WHY, because it looks like the fussier choice and isn't: next/font/google
+// downloads the .woff2 files from fonts.gstatic.com AT BUILD TIME. Any
+// environment without egress to Google — this sandbox, an air-gapped CI, a
+// restricted corporate network — fails the build outright. It cost a 500 on
+// every page here before it was caught.
+//
+// Fontsource ships the same font files as npm packages, so they are pinned in
+// package-lock.json, bundled by the build, and served from our own origin. That
+// is what CLAUDE.md's "self-host both" rule was actually asking for: no runtime
+// Google dependency for the APK or the installed PWA, AND no build-time one.
+//
+// Only the weights actually used are imported — Instrument Sans as a variable
+// font (it covers 400-700 in one file), IBM Plex Mono at the three weights the
+// design uses.
+import "@fontsource-variable/instrument-sans";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
 import "./globals.css";
-
-/*
-  next/font downloads both faces at build time and serves them from our own
-  origin. That is what satisfies the rule in CLAUDE.md that the app must not
-  depend on Google Fonts at runtime — it matters for the Android APK and for
-  the installed PWA, neither of which should need a third-party host to render
-  text.
-*/
-const instrumentSans = Instrument_Sans({
-  subsets: ["latin"],
-  variable: "--font-instrument-sans",
-  display: "swap",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-ibm-plex-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "ASHA",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "attempt data across every mock you log and tells you what to change next — " +
     "with the sample size behind every claim.",
   applicationName: "ASHA",
-  // iOS ignores most of manifest.json, so the home-screen behaviour is driven by
+  // iOS ignores most of manifest.json, so home-screen behaviour is driven by
   // these Apple-specific values. Without appleWebApp.capable, Add to Home Screen
   // produces a Safari bookmark rather than a fullscreen app. See
   // docs/decisions.md, "iPhone is served by the PWA".
@@ -53,9 +53,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${instrumentSans.variable} ${ibmPlexMono.variable}`}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -2,6 +2,18 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-07-29 — Fonts via Fontsource (npm), not `next/font/google`
+
+`next/font/google` **downloads the .woff2 files from fonts.gstatic.com at build time.** That is easy to miss, because the phrase everyone repeats about it is "self-hosted" — which is true of the *served* app and false of the *build*. Any environment without egress to Google fails: an air-gapped CI, a restricted corporate network, or the sandbox this was developed in, where it produced an HTTP 500 on every page with `Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'` buried under a hundred font-fetch warnings.
+
+`@fontsource-variable/instrument-sans` and `@fontsource/ibm-plex-mono` ship the identical font files as npm packages. So they are pinned in `package-lock.json`, fetched by the same install that fetches everything else, bundled by the build, and served from our own origin.
+
+This is strictly better against what CLAUDE.md actually asked for — "self-host both, so the app never depends on Google Fonts at runtime" — because it removes the *build-time* dependency too. The rule's wording has been left alone; only the mechanism changed.
+
+Family names are `"Instrument Sans Variable"` (a variable font covering 400–700 in one file) and `"IBM Plex Mono"` (three static weights: 400/500/600, the three the design uses). They are referenced from `globals.css`, so nothing changes if the mechanism changes again.
+
+**Note for a future session:** the earlier `next build` passed *before* this was caught, because font-fetch failures are warnings at build time and only became fatal when a page actually rendered in dev. A green build is not evidence that fonts resolve.
+
 ## 2026-07-29 — Next pinned to 16.2.12, not Dhruva's 16.2.10
 
 Found on the first `npm install`. **Next 16.2.10 — the version Dhruva pins — carries nine advisories**, all patched in 16.2.11:
@@ -13,7 +25,9 @@ Found on the first `npm install`. **Next 16.2.10 — the version Dhruva pins —
 - Denial of service in App Router via Server Actions, and in Image Optimization via SVGs
 - Unbounded Server Action payload in the Edge runtime
 
-The middleware bypass is the one that decides it. Phase 2 wires phone-OTP auth with middleware session gating, so a middleware bypass is an auth bypass — on a database whose entire protection model is per-user RLS behind that session.
+**Correction (same day, while starting Phase 2):** the original version of this entry justified the bump mainly on the middleware bypass, claiming Phase 2 would use middleware session gating. That was wrong — Dhruva is deliberately middleware-less (`src/lib/supabase/server.ts` says so, and there is no `middleware.ts`), and ASHA follows it. The middleware advisory is therefore largely inapplicable to our shape.
+
+The bump still stands on the remaining advisories, which do apply: **unauthenticated disclosure of internal Server Function endpoints**, SSRF in Server Actions on custom servers, cache confusion of response bodies, and unbounded Server Action payloads. Phase 2 introduces Route Handlers that mint credentials, so "unauthenticated disclosure of internal Server Function endpoints" is the one that matters most here. Left uncorrected, the original wording would have had a future reader defending a version pin on a threat model we don't have.
 
 **Why this is not a stack-rule violation.** CLAUDE.md says match Dhruva's *major* versions so nothing is re-learned. 16.2.10 → 16.2.12 is a patch bump inside the same major.minor: no API changes, nothing to re-learn, and `next build` and `tsc --noEmit` both pass. The rule's purpose is served. CLAUDE.md now states explicitly that patch-level security bumps need no amendment, so a future session does not "restore consistency" by pinning back to a vulnerable build.
 

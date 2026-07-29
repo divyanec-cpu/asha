@@ -10,9 +10,10 @@
   contrast is what makes the app read as an instrument rather than a dashboard.
   See CLAUDE.md, "Design system".
 
-  Font families are wired to the CSS variables that next/font sets in layout.tsx.
-  next/font downloads and self-hosts both faces at build time, so there is no
-  runtime dependency on Google Fonts — which CLAUDE.md requires.
+  Font families name the faces that Fontsource registers via the imports in
+  layout.tsx. Fontsource ships the font files as npm packages, so the build has
+  no network dependency on Google and the served app has no runtime one — see
+  the comment in layout.tsx for why next/font/google was rejected.
 */
 
 @theme {
@@ -42,8 +43,9 @@
   --color-mute-300: #A9A497; /* secondary prose on ink                     */
 
   /* ── Type ─────────────────────────────────────────────────────────────── */
-  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  /* Family names exactly as Fontsource declares them. */
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   /* ── Structure ────────────────────────────────────────────────────────── */
   /* The paper sheet's top corners, where it meets the ink header. */

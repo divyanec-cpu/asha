@@ -2,6 +2,37 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-07-29 — Phase 2: phone-OTP auth and the profile screen
+
+**What changed**
+- `lib/supabase/{client,server,service}.ts` — browser, cookie-based server, and service-role clients. ASHA is middleware-less, following Dhruva: session gating lives in the Server Components that need it, and there is no `middleware.ts`.
+- `lib/otp.ts` — `isDevMode`, `computeDevOtp` (salted `asha-dev-otp:` so a number's dev code differs from Dhruva's on the same machine), and `isReservedTestPhone`, which is **deliberately empty**: no synthetic test numbers are reserved yet (builder's decision), and the check is pre-wired so reserving one later is a one-line change.
+- `lib/msg91.ts` + `lib/msg91Widget.ts` — server-side widget token verification and the headless client loader, ported with Dhruva's live-found gotchas intact (the widget initialises *after* its script's onload, so polling for the exposed methods is required).
+- `api/otp/send` and `api/otp/verify` — dev-mode deterministic code, real-mode widget token verification, then the session bootstrap.
+- `AuthFlow.tsx` (design 2a), `profile/page.tsx` + `profile/ProfileForm.tsx` (design 2b), and `page.tsx` as the session gate.
+- **Fonts moved from `next/font/google` to Fontsource** — see `decisions.md`; the former needs build-time egress to Google and 500'd every page here.
+
+**Why the auth mechanism looks strange**
+Supabase has no server-side session API for phone users (`admin.generateLink` is email-only). The server verifies the OTP, find-or-creates the auth user, sets a fresh 256-bit random password, and hands it to the browser once over HTTPS; the browser then runs a normal `signInWithPassword`, which is the only path that persists session cookies correctly. Dhruva's notes record that server-side `setSession` and token-handoff were both tried and both failed. The password is deliberately **not** rotated afterwards, because Supabase revokes sessions on an admin password change.
+
+**A bug caught before it ran:** Dhruva calls `rpc("get_user_id_by_phone", { phone_input })`; ASHA's migration `0001` declares the parameter `p_phone`. Copying that line verbatim would have failed at runtime with an unhelpful PostgREST error.
+
+**Verified**
+- `npm run typecheck`, `npm run lint`, `npm run build` — all clean; routes `/`, `/profile`, `/api/otp/send`, `/api/otp/verify`.
+- Design 2a renders at a 360px viewport, both the phone step and the OTP step.
+- `/api/otp/send` works: the dev code printed to the server console (`602932` for 9000000001) matched an independently computed value, so `computeDevOtp` agrees end to end.
+- The OTP input's invisible-overlay geometry is correct — `elementFromPoint` at its centre returns the input itself, enabled, `pointer-events: auto`.
+
+**NOT verified — everything past OTP entry**
+`/api/otp/verify` failed with `TypeError: fetch failed`, because **this development sandbox cannot reach `*.supabase.co`** (DNS returns ENOENT for the project host, while npm resolves). The host machine resolves it fine, so this is an environment limitation, not a code defect — but it means the following are written and unproven: auth user creation, the password handoff, `signInWithPassword`, the profile insert, and the entire `/profile` screen. **These must be tested on the builder's machine before Phase 2 is called done.**
+
+**How to test (on the builder's machine, not the sandbox)**
+1. `npm run dev`, open the app, enter any 10-digit number.
+2. Read the six-digit code from the terminal — it is printed as `[dev-otp] Code for +91…`.
+3. Enter it. Expect: profile screen → fill four fields → "Log my first mock" → the signed-in placeholder greeting you by name.
+4. Refresh mid-profile: it should stay on `/profile`, because that state lives in a real URL.
+5. Sign in again with the same number: it should skip the profile screen and go straight to the placeholder.
+
 ## 2026-07-29 — Supabase project live; Next.js scaffolded
 
 **What changed**
