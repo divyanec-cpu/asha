@@ -11,6 +11,11 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // Analytics files import each other with explicit .ts extensions so Node's
+    // ESM resolver can load them directly for `npm test` (node --test runs
+    // TypeScript natively; there is no test-runner dependency). Safe because
+    // noEmit is set — nothing is compiled, so no broken output paths.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

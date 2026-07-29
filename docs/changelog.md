@@ -2,6 +2,35 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-07-30 — Synthetic fixture, and Phase 5: the analytics layer with tests
+
+**Synthetic development data** — `scripts/seed-dev-attempts.mjs`, 8 mocks / 40 sets / 368 question rows. Nothing real can be built against one mock: set-selection needs 5 sets of an archetype, calibration 30 tagged answers, pacing 3 mocks. Three safeguards, because fabricated rows in the same tables as real ones would silently corrupt a student's insights:
+
+1. every source titled `[SYNTH] …`, so it is obvious in the UI and greppable in the database;
+2. `--delete` removes exactly those rows, attempts first (because `source_id` is ON DELETE SET NULL, so dropping sources alone would orphan them);
+3. **deterministic** — seeded PRNG, no `Math.random`, no `new Date()` — so the same command always yields the same data, which is what makes it usable as a fixture.
+
+The synthetic student has a consistent, deliberate profile: clears Games & Tournaments, has never cleared a scatter plot, fast and accurate on arithmetic, slow and wrong on Time & Work, mostly misreads rather than concept gaps, collapses in QA's third quarter. Phase 5's job was to rediscover exactly that from the rows.
+
+**Phase 5 — `src/lib/analytics/`, no UI.** Pure functions over plain arrays: no Supabase client, no React (architecture.md). Seven insight kinds plus trend and the global confidence chip.
+
+- **`Claim<T>`** makes the honesty rule structural. There is no way to return a claim without its evidence base, and a below-threshold result carries the shortfall message *instead of* a number — so a caller physically cannot render a claim that shouldn't exist.
+- **`setSelectionPlaybook`** ranks archetypes by marks-per-minute. `supportingN` is times **opened**, not times seen, or a shape opened once could claim a 100% clear rate on n=7. `clearRate` is null when never opened, because 0% would be a lie. `abandonAfterSec` needs 5 **cleared** sets, since a cutoff derived from two successes is noise dressed as advice.
+- **`quadrant`** splits on the student's own medians, not absolute cutoffs — an external standard would be a peer comparison, which rule 4 forbids.
+- **`timeTraps`** deliberately claims **no ratio**. The design's "2.4× your median" cannot be supported by four coarse buckets of recalled time.
+- **`trend`** has a `readonly trendline: null` field that exists to document a refusal, so nobody adds a slope later thinking it was an oversight.
+- **`pacing`** reads `quarterMarks` and never infers it — no v1 flow captures attempt order.
+
+**43 tests, all passing.** `npm test` runs them with `node --test`, which executes TypeScript natively — no test-runner dependency. Suppression is tested as hard as the arithmetic, because a claim that shouldn't exist is worse than one that's slightly off.
+
+**The calibration arithmetic is pinned down.** A test asserts that 41 guesses at 22% costs about **5** marks and explicitly *not* the 14 the design mockup claimed, and that CAT's breakeven accuracy is 25%.
+
+**A bug the unit tests missed, caught by `scripts/check-analytics.ts`.** That script runs every analytic against the live database — tests prove the maths, this proves the wiring and the behaviour on real distributions. It reported `marks lost to guessing = 9.9`, a *positive* loss. The arithmetic was right: guessing a TITA carries no penalty, so it has positive expected value, and the fixture makes VARC verbal-ability questions TITA. The **name and the boolean were backwards** — it would have rendered as "guessing cost you 9.9 marks" when the truth was the opposite. Every unit test until then used MCQ guesses only. Renamed to `expectedMarksFromGuessing` with an explicit sign convention, split `guessingCostsMarks` from `guessingIsMarginal`, and added three tests including a mixed MCQ/TITA paper.
+
+**One test was wrong, not the code.** A time-trap case built 5 of 8 attempts in the slowest bucket and expected a flag. But a trap is an *outlier* within a type — the spec says "far more than their own median for that type" — so a majority-slow type is systematic slowness, which belongs in the quadrant as slow-and-wrong. The fixture was corrected and a second test now pins the distinction.
+
+**Verified against the live fixture:** the analytics recover the designed profile — Scatter plot → `skip_on_sight` at 0% clear with negative marks/minute over 60 minutes spent; Time & Work `slow_wrong` at 39% and 300s; QA pacing weakest in Q3 and **recovering** (so the time was there) while VARC and DILR taper to Q4 and don't; calibration back at 92 / 54 / 24; two archetypes correctly locked with shortfall messages; `trendline` null.
+
 ## 2026-07-30 — Phase 4: VARC/QA question entry, both modes
 
 **What changed**
