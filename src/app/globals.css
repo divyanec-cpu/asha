@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/*
+  ASHA design tokens, lifted from the Claude Design handoff
+  ("CAT exam prep mobile app-handoff.zip" → Asha Mobile.dc.html).
+  Declared here once so no component hardcodes a hex value.
+
+  The mono/sans split is load-bearing, not decorative: Instrument Sans for
+  prose and UI, IBM Plex Mono for EVERY number, label, stat and code. That
+  contrast is what makes the app read as an instrument rather than a dashboard.
+  See CLAUDE.md, "Design system".
+
+  Font families are wired to the CSS variables that next/font sets in layout.tsx.
+  next/font downloads and self-hosts both faces at build time, so there is no
+  runtime dependency on Google Fonts — which CLAUDE.md requires.
+*/
+
+@theme {
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --color-ink: #12151A;      /* dark headers, primary text on paper, dark cards */
+  --color-paper: #F4F1EA;    /* the main sheet                                 */
+  --color-canvas: #E8E4DC;   /* behind the sheet                               */
+
+  /* ── Accent ───────────────────────────────────────────────────────────── */
+  --color-brass: #B8863B;    /* primary action, section eyebrows, live accents  */
+  --color-brass-dim: #8f6626;
+  --color-brass-lit: #E4C08A; /* brass text on the ink background              */
+
+  /* ── Verdict colours ──────────────────────────────────────────────────── */
+  /* Used for set verdicts, quadrant zones and playbook ranking. Never used to
+     compare one student against another — there is nothing to compare to. */
+  --color-cleared: #2E7D5B;      /* cleared, right, "pick first"           */
+  --color-cleared-soft: #6BA88A; /* "pick second"                          */
+  --color-warn: #D9922E;         /* abandoned, "only if third", low conf   */
+  --color-bad: #C0483C;          /* failed, wrong, "skip on sight"         */
+  --color-bad-soft: #E08A7E;     /* bad-news text on the ink background    */
+
+  /* ── Muted greys, warm to match the paper ─────────────────────────────── */
+  --color-mute-500: #8A8578; /* labels on paper                            */
+  --color-mute-600: #6B6659; /* secondary prose on paper                   */
+  --color-mute-400: #A09B8E; /* placeholders, disabled, locked-card text   */
+  --color-mute-300: #A9A497; /* secondary prose on ink                     */
+
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+
+  /* ── Structure ────────────────────────────────────────────────────────── */
+  /* The paper sheet's top corners, where it meets the ink header. */
+  --radius-sheet: 26px;
+  --radius-card: 14px;
+  --radius-control: 12px;
+}
+
+/*
+  Mobile-first: designed at 390px (the handoff frame), tested at 360px (the
+  cheapest real Android). See CLAUDE.md workflow rule 7.
+*/
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+  Numbers are tabular everywhere. A score that shifts horizontally as it
+  animates or updates looks like a toy, and this app's whole claim is that it
+  is an instrument.
+*/
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}

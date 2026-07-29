@@ -1,0 +1,33 @@
+# Secrets — never commit. CLAUDE.md workflow rule 5.
+.env.local
+.env*.local
+
+# Android signing. These MUST stay backed up outside the repo: a future Play
+# Store listing is permanently tied to them and they cannot be regenerated.
+android/keystore.properties
+android/*.keystore
+android/local.properties
+
+# Dependencies / build output
+node_modules/
+.next/
+out/
+build/
+www/
+
+# Capacitor generated native projects
+android/build/
+android/app/build/
+android/.gradle/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,36 @@
+{
+  "name": "asha",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "seed": "node --env-file=.env.local scripts/seed-cat-taxonomy.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
+    "next": "16.2.12",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
+  },
+  "comment_overrides": "sharp: libvips CVEs in <0.35.0 (optional dep of next, only used by Image Optimization — which v1 never uses, since ASHA accepts no uploads). postcss: next bundles its own 8.4.31 internally, which carries three advisories; ours is already clean. Both forced to patched versions. Verified `next build` still passes after pinning — if a future next upgrade conflicts, re-check the advisories before loosening these.",
+  "overrides": {
+    "sharp": "^0.35.3",
+    "postcss": "^8.5.25"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
