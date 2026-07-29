@@ -10,7 +10,11 @@ The structural difference from Dhruva: there is **no consent/invite graph**. Use
 
 *Same read model as Dhruva's `syllabus_topics`: readable by any authenticated user, written only via service role.*
 
-- **`exams`** — id, code (`CAT`/`GMAT`/`MAT`, unique), name, adaptive (bool), active. Only CAT has `active = true` in v1; GMAT and MAT rows exist so the schema is exercised but no UI exposes them.
+- **`exams`** — id, code (`CAT`/`GMAT`/`MAT`, unique), name, adaptive (bool), active.
+
+  **Correction (2026-07-29):** this previously said "GMAT and MAT rows exist so the schema is exercised but no UI exposes them." They do not exist — `seed-cat-taxonomy.mjs` inserts CAT only, which is what CLAUDE.md's scope fence requires ("GMAT and MAT configs — v3; the schema supports them, the seed data and UI do not ship"). The `code` check constraint permits them; no row does.
+
+  Consequence, noticed while building the profile screen: the design's greyed-out **"GMAT — soon"** chip does not render, because `ProfileForm` derives its inactive-exam chips from rows in this table rather than hardcoding exam names. That is the correct behaviour — seeding a GMAT row with `active = false` would make the chip appear with no code change. It is recorded here so nobody "fixes" the missing chip by hardcoding a string.
 - **`exam_configs`** — id, exam_id, effective_year, total_questions, total_time_min, mark_correct, mark_wrong_mcq, mark_wrong_numeric, section_order_fixed, review_edit_limit (GMAT's 3-per-section; null elsewhere), unattempted_penalty (jsonb — XAT's −0.10-beyond-8 rule; null for CAT), notes. Unique on (exam_id, effective_year). **Versioned by year deliberately**: a mid-season pattern change is a data edit, never a code change.
 - **`sections`** — id, exam_id, code, name, ordinal, time_limit_min, question_count, has_own_timer, counts_toward_score. Unique on (exam_id, code). `counts_toward_score = false` handles MAT's Indian & Global Environment and XAT's GK without a special case in scoring code.
 - **`question_types`** — id, exam_id, section_id, parent_id (self-referencing), code (unique per exam), name, **kind** (`question_type`/`set_archetype`/`passage_domain`), depth, is_leaf, description, sort_order, active. Unique on (exam_id, code).

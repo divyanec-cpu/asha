@@ -38,8 +38,11 @@ export default async function Page() {
         <div className="font-mono text-xl font-semibold tracking-[0.35em] text-paper">ASHA</div>
         <div className="mt-3 h-0.5 w-11 bg-brass" />
       </div>
+      {/* No trailing full stop: a name like "Arjun R." already ends in one, and
+          "Arjun R.." is what you get. Names are user-supplied, so never append
+          punctuation directly after one. */}
       <p className="text-lg leading-snug text-paper text-pretty">
-        You&rsquo;re signed in, {profile.name}.
+        You&rsquo;re signed in, {profile.name}
       </p>
       <p className="text-[13.5px] leading-relaxed text-mute-500 text-pretty">
         Home, the set-selection playbook and mock logging are still being built. Nothing here is

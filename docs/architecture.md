@@ -136,9 +136,17 @@ There is no Supabase CLI and no `psql` in this environment, and Dhruva has neith
 
 The cost of a manual paste is that skipping a file, or selecting only part of one before hitting Run, fails **silently** — the next migration usually still succeeds, and the gap surfaces much later as a missing table or, worse, a table with RLS off. `supabase/verify.sql` exists for exactly that: paste it after the five migrations and read the PASS/FAIL column. Do not run the seed script until every row passes.
 
+## Supabase dashboard configuration (not in migrations)
+
+Two settings live in the dashboard rather than in SQL, so a fresh project needs them set by hand. They are easy to miss because nothing in the repo can enforce them.
+
+**Authentication → Sign In / Providers → Phone: ENABLED.** Required for both `auth.admin.createUser({ phone })` and `signInWithPassword({ phone, … })`. Without it the server half of the OTP flow succeeds — the user is created and the password is set, returning 200 — and then the browser's sign-in fails with Supabase's `Phone logins are disabled`. The symptom therefore appears at the very last step, which makes it look like a bug in the session handoff rather than a missing toggle.
+
+**Note on the SMS provider fields.** Supabase's phone provider normally sends its own OTP, so enabling it surfaces SMS provider credentials (Twilio and friends). **ASHA never asks Supabase to send an SMS** — MSG91 does that, and Supabase's phone identity is used only as the account key for the password handoff. Any credentials entered there go unused. Phone confirmations can stay off: `createUser` is called with `phone_confirm: true`, so the number is already marked confirmed server-side.
+
 ## Next steps
 
-1. Create the Supabase project; apply migrations `0001`–`0005` in order via the SQL Editor; run `supabase/verify.sql` and confirm every check PASSes.
+1. Create the Supabase project; apply migrations `0001`–`0005` in order via the SQL Editor; run `supabase/verify.sql` and confirm every check PASSes. Then enable the Phone provider (above) — the migrations cannot do it for you.
 2. Scaffold Next.js (matching Dhruva's major versions) — this installs `@supabase/supabase-js`, which the seed script needs.
 3. Run `seed-cat-taxonomy.mjs`; it **asserts** its result against the live database (75 nodes, 3 sections, 56/12/7 by kind) and exits non-zero on a mismatch rather than merely printing counts.
 4. Wire phone-OTP auth and the profile screen.

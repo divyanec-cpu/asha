@@ -23,7 +23,35 @@ Supabase has no server-side session API for phone users (`admin.generateLink` is
 - `/api/otp/send` works: the dev code printed to the server console (`602932` for 9000000001) matched an independently computed value, so `computeDevOtp` agrees end to end.
 - The OTP input's invisible-overlay geometry is correct — `elementFromPoint` at its centre returns the input itself, enabled, `pointer-events: auto`.
 
-**NOT verified — everything past OTP entry**
+**FINAL: Phase 2 verified end to end against the live project**
+
+Full flow confirmed working on the builder's machine: phone → OTP → sign-in → profile → save → signed-in home, then a reload going straight past the profile screen. Specifically proven:
+
+- The password handoff works. Landing on `/profile` means `signInWithPassword` succeeded **and** the session cookies persisted, because `/profile` is a Server Component that read the session back.
+- The row written is correct: `name`, `target_exam = CAT`, `target_year = 2026`, `target_percentile = 99`, `prep_mode = online` (design label "Coaching" → stored `classroom` mapping intact).
+- `target_year` came from `exam_configs.effective_year`, not a constant — no exam facts in code.
+- RLS scopes reads: an unfiltered `select *` on `users` as the signed-in user returned exactly one row, their own.
+- Returning-user routing works: a session with a profile skips `/profile`.
+
+**The blocker was a dashboard setting, and it cost two rounds.** Supabase's Phone provider was off. Enabling it requires SMS provider credentials that ASHA never uses — MSG91 sends the OTP and Supabase's phone identity is only the account key — so format-valid dummy Twilio values are entered (`AC…`/`MG…` + 32 chars). This is **not recorded anywhere in Dhruva's docs**, which is exactly why it could not be recalled; it is now in `architecture.md` under "Supabase dashboard configuration". Diagnosing it took querying `/auth/v1/settings` directly for `external.phone`, which is far faster than inferring it from a failed login.
+
+**Two defects found by running it:**
+- `You're signed in, Arjun R..` — double full stop, because a name may already end in one. Fixed; never append punctuation straight after a user-supplied name.
+- The design's greyed **"GMAT — soon"** chip does not render, because no GMAT row is seeded. That is correct per the scope fence, and `data-model.md` had wrongly claimed such rows existed. Doc corrected, with a note not to "fix" the chip by hardcoding an exam name.
+
+**Update, same day — server half verified (superseded by the above)**
+
+Re-tested against the builder's own `npm run dev` (port 3001; Dhruva holds 3000). `/api/otp/verify` returned **200 OK**, which proves the whole server-side chain works: the `get_user_id_by_phone` RPC with `p_phone`, `auth.admin.createUser({ phone })`, the password set, and the profile lookup. The resend countdown ticks correctly too.
+
+Sign-in then failed with Supabase's `Phone logins are disabled` — a **dashboard setting, not a code defect.** The Phone provider must be enabled under Authentication → Sign In / Providers; migrations cannot set it. Now documented in `architecture.md` under "Supabase dashboard configuration", including the note that the SMS provider credentials Supabase asks for go unused, because MSG91 sends the OTP and Supabase's phone identity is only the account key.
+
+Worth noting how this failure presents: the server returns 200 and the user is created, so the error appears at the very last step and looks like a broken session handoff rather than a missing toggle.
+
+**Left behind by testing:** an auth user for `+919000000001` with no profile row. Harmless, but deletable from Authentication → Users.
+
+**Still unverified after that toggle:** `signInWithPassword`, the profile insert, and the `/profile` screen.
+
+**NOT verified at the time of the original entry — everything past OTP entry**
 `/api/otp/verify` failed with `TypeError: fetch failed`, because **this development sandbox cannot reach `*.supabase.co`** (DNS returns ENOENT for the project host, while npm resolves). The host machine resolves it fine, so this is an environment limitation, not a code defect — but it means the following are written and unproven: auth user creation, the password handoff, `signInWithPassword`, the profile insert, and the entire `/profile` screen. **These must be tested on the builder's machine before Phase 2 is called done.**
 
 **How to test (on the builder's machine, not the sandbox)**
