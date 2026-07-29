@@ -44,6 +44,42 @@ export function totalSetMarks(scheme: MarkingScheme, tallies: SetTally[]): numbe
   return tallies.reduce((sum, t) => sum + setMarks(scheme, t), 0);
 }
 
+export type QuestionOutcome = {
+  status: "attempted" | "skipped" | "revisited";
+  isCorrect: boolean | null;
+  responseFormat: "mcq" | "tita";
+};
+
+/**
+ * Marks for a single question.
+ *
+ * Unlike set-level marking, this CAN honour the TITA rule, because response
+ * format is recorded per question: CAT applies no penalty to a wrong
+ * type-in-the-answer question, which is why `mark_wrong_numeric` exists as a
+ * separate config field. A skipped question scores nothing either way.
+ */
+export function questionMarks(scheme: MarkingScheme, q: QuestionOutcome): number {
+  if (q.status === "skipped" || q.isCorrect === null) return 0;
+  if (q.isCorrect) return scheme.markCorrect;
+  return q.responseFormat === "tita" ? scheme.markWrongNumeric : scheme.markWrongMcq;
+}
+
+export function totalQuestionMarks(scheme: MarkingScheme, questions: QuestionOutcome[]): number {
+  return questions.reduce((sum, q) => sum + questionMarks(scheme, q), 0);
+}
+
+/**
+ * Questions left blank that carried no penalty for guessing.
+ *
+ * "Never leave a TITA blank" is a rule ASHA can check mechanically, and it is
+ * the cheapest marks on the table — a wrong TITA costs nothing, so a blank one
+ * is a free expected gain forgone. This is why response_format is worth one tap
+ * during entry.
+ */
+export function freeSkips(questions: QuestionOutcome[]): number {
+  return questions.filter((q) => q.status === "skipped" && q.responseFormat === "tita").length;
+}
+
 export type Reconciliation = {
   /** What the logged rows add up to. */
   computed: number;

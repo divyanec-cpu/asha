@@ -47,7 +47,7 @@ export default async function LogPage() {
             {unfinished.map((a) => (
               <Link
                 key={a.id}
-                href={`/log/${a.id}/dilr`}
+                href={`/log/${a.id}`}
                 className="flex items-center justify-between rounded-[13px] border border-brass/45 bg-brass/[0.07] px-4 py-3.5"
               >
                 <div>
@@ -70,7 +70,7 @@ export default async function LogPage() {
             {finished.map((a) => (
               <Link
                 key={a.id}
-                href={`/log/${a.id}/dilr`}
+                href={`/log/${a.id}`}
                 className="flex items-center justify-between rounded-[13px] border border-ink/[0.1] bg-white px-4 py-3.5"
               >
                 <div>

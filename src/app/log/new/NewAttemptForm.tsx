@@ -120,7 +120,7 @@ export default function NewAttemptForm({
       const { error: sectionError } = await supabase.from("section_attempts").insert(rows);
       if (sectionError) throw new Error(sectionError.message);
 
-      router.replace(`/log/${attempt.id}/dilr`);
+      router.replace(`/log/${attempt.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create the attempt");
       setBusy(false);

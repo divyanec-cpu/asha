@@ -2,6 +2,32 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-07-30 — Phase 4: VARC/QA question entry, both modes
+
+**What changed**
+- **Routes restructured.** `/log/[attemptId]/dilr` is gone. `/log/[attemptId]/section/[code]` now serves every section and branches on data: a section owning `set_archetype` nodes renders the set sheet, anything else renders the question sheet. Nothing knows the string "DILR".
+- **`/log/[attemptId]`** — new attempt overview. Three sections with per-section progress, whether each logs by set or by question, and the button that marks the attempt complete. Needed because a mock is logged section by section and the student is expected to stop halfway; without it, "resume" has to guess where they were.
+- **`QuestionSheet`** — designs 1e and 1f. Mode picker per section, batch grid, card-by-card walk, and a shared detail editor used by both (batch reuses it for the exception pass).
+- **`marking.ts`** gains `questionMarks`, `totalQuestionMarks`, `freeSkips`. Unlike set-level marking this *can* honour the TITA rule, because response format is per question.
+- **TITA capture.** Every question defaults to MCQ with a one-tap TITA toggle. This was offered as a decision and not answered, so the recommended option was taken and stated plainly: it costs a tap on roughly eight questions per paper and buys the mechanical check "you left N TITA questions blank — those carry no penalty, so a guess was free". Trivially removable.
+
+**Design decisions**
+- **Batch mode's honest cost is shown, not hidden.** It only tags confidence on exceptions, and calibration needs *both* diagonals — confident-and-wrong and unconfident-and-right. The second is invisible if you only tag what went wrong. So the footer reads `2/24 CONFIDENCE-TAGGED` live, and calibration will count only tagged answers. Nothing is assumed for untagged ones.
+- **Question type is optional in batch mode.** Design 1f shows a type against every row, but ASHA cannot know the paper's types — only the student can assign them, and 24 assignments would defeat the point of batch. Untyped rows save as `Untyped`; type-dependent analytics will count only typed rows.
+- **Running totals in the footer** rather than only at the end, so a mis-entry is visible while the paper is still open in front of them.
+
+**Verified end to end on the live attempt**
+- Overview derives `BY SET` / `BY QUESTION` from archetype ownership, and showed DILR already `LOGGED 22/22` from Phase 3.
+- VARC in **batch**: 24 rows defaulting to Right, tally moving to 21/2/1, exception pass walking only Q04 → Q09 → Q17, saved with correct marks (21×3 − 2 = **61**).
+- QA in **cards**: type picker grouped exactly as seeded — Arithmetic 8, Algebra 9, Geometry 6, Number systems 4, Modern maths 4 = 31 leaves. No passage-domain picker appears, correctly, since QA owns none.
+- **Both calibration diagonals captured**: VARC has one confident-and-wrong (confidence 3 + incorrect), QA has one unsure-but-right. The second is exactly what batch mode cannot see, and it came from cards mode — which is the argument for shipping both, now demonstrated rather than asserted.
+- Skipped questions store `confidence = null`; DILR still has zero question rows, as it is logged at set level.
+- Marking complete moved the attempt from "pick up where you left off" to "LOGGED".
+
+**Two defects found by running it, both fixed**
+- **"SAVE & EXIT" did not save.** It only navigated, in both the batch grid and the detail editor — breaking the one promise this flow makes. In card-by-card mode it was the only way to preserve partial work, since the final Save appears on the last question. It now persists and then routes. (SetSheet's equivalent was already honest: it writes each set on "Add this set".)
+- **`1 TITA questionleft blank`** — a `{expr} word` JSX boundary silently ate its space. Rebuilt as a single interpolated string so it cannot recur.
+
 ## 2026-07-30 — Phase 3: the mock log and the DILR set sheet
 
 **What changed**

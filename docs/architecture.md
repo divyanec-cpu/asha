@@ -63,7 +63,11 @@ asha/
     app/
       page.tsx                  session → profile redirect, else auth flow
       log/                      THE CORE LOOP — mock review entry
-        [attemptId]/            resumable section-by-section entry
+        page.tsx                attempts list, unfinished surfaced first
+        new/                    create an attempt (no design screen exists)
+        [attemptId]/            attempt overview: 3 sections + mark complete
+          section/[code]/       ONE route for every section; branches on data —
+                                owns set archetypes → SetSheet, else QuestionSheet
       playbook/                 set-selection order + skip regret     (nav tab 2)
       trends/                   cross-mock trend, quadrant, diagnostics (nav tab 3)
       account/                  profile, export, delete
