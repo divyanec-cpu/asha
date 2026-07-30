@@ -162,6 +162,41 @@ describe("set-selection playbook", () => {
     }
   });
 
+  test("a below-threshold shape never takes the pick_first slot", () => {
+    // The bug this pins down: a shape opened ONCE at a 100% clear rate has the
+    // best marks-per-minute, so it took pick_first, was then hidden as
+    // below-threshold, and the playbook's top visible row read "PICK SECOND"
+    // with no first anywhere. Worse than cosmetic — it advised picking a shape
+    // on evidence too thin to display.
+    const thin = sets(1, "cleared", {
+      archetypeId: "a-venn",
+      archetypeName: "Venn",
+      timeSpentSec: 60,
+      marksEarned: 12, // absurd marks/min, would win any ranking
+    });
+    const solid = sets(5, "cleared", {
+      archetypeId: "a-games",
+      archetypeName: "Games",
+      timeSpentSec: 540,
+      marksEarned: 12,
+    });
+
+    const out = setSelectionPlaybook([...thin, ...solid]);
+    const live = out.filter((c) => c.status === "ok");
+    assert.equal(live.length, 1, "only the 5-set shape should be live");
+    if (live[0].status === "ok") {
+      assert.equal(live[0].data.archetypeName, "Games");
+      assert.equal(live[0].data.recommendation, "pick_first");
+    }
+  });
+
+  test("skip_on_sight also requires clearing the threshold", () => {
+    // Two failed openings is not evidence to tell someone never to open a shape.
+    const rows = sets(2, "attempted_failed", { marksEarned: -1, timeSpentSec: 470 });
+    const [c] = setSelectionPlaybook(rows);
+    assert.equal(c.status, "below_threshold");
+  });
+
   test("abandonAfterSec needs 5 CLEARED sets, not 5 opened", () => {
     // 5 opened, only 3 cleared — enough for a standing, not for a cutoff.
     const rows = [...sets(3, "cleared"), ...sets(2, "attempted_failed", { marksEarned: -1 })];

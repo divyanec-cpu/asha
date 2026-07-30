@@ -2,6 +2,28 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-07-30 — Phase 6: the insight screens
+
+**What changed**
+- **`components/Insight.tsx`** — `LockedCard` first, because two archetypes and every below-threshold claim depend on it, and it is the honest-scarcity argument made visible. Also `EvidenceChip` (sample size + confidence, on every live claim), and the light/dark insight card treatments. Every insight on every screen renders through these, so the treatment cannot drift between views.
+- **`components/BottomNav.tsx`** — the four tabs. LOG is the brass circle rather than a fourth flat tab: logging is the only *action* in the product, everything else is reading, and time-to-logged-mock is the product metric.
+- **`lib/analytics/load.ts`** — the one adapter between database rows and analytics shapes. Deliberately the only file in `lib/analytics/` that touches Supabase and does no arithmetic, so the pure core stays testable. All three screens read it, so they cannot diverge. Counts **complete attempts only**: a half-logged mock would otherwise drag every average down and make a student look like they had regressed.
+- **`lib/timeBuckets.ts`** — buckets shared between entry and analytics. `timeTraps` defines a trap as "attempts in the slowest bucket", so separate copies would let a change to one silently stop the other from matching.
+- **`/` (designs 1a + 1b)**, **`/playbook` (1c)**, **`/trends` (1h + 1i + 1j)**.
+
+**1a and 1b are one screen, not two.** They are the same layout at 12, 3 and 1 mocks, and the only difference is what has crossed its threshold — so the thresholds do the design work. Verified by deleting the synthetic data and viewing the 1-mock state: "NO CONFIDENT READING YET", descriptive counts under "HERE'S WHAT'S LOGGED, AND NOTHING MORE", "We won't call any of that a pattern yet. It isn't one.", and three locked cards showing 5/30, 2/5 and the playbook shortfall. Those descriptive counts are facts rather than claims, which is why they carry no threshold and a new user isn't shown an empty screen.
+
+**Scope decision.** Designs 1c and 1d are alternative presentations of identical data. 1c (the ranked ledger) ships, because its stated audience — "the student who wants to audit the claim" — is ASHA's whole audience. 1d's verdict-first framing is carried by the recommendation badges and can be added later as a second view with no schema or analytics change.
+
+**Verified against the seeded fixture:** the screens recover the designed profile — scatter plot as `SKIP ON SIGHT` at 0% over 59.8 minutes, Philosophy passages worst at 41% (which is what migration `0005` was for), QA pacing collapsing in Q3 and recovering, calibration at 92/54/24, `PICK FIRST → PICK SECOND → ONLY IF THIRD → SKIP ON SIGHT` reading as a coherent ladder, and the trend view stating its refusal to draw a line on screen.
+
+**Five defects found by running it, all fixed**
+- **A below-threshold shape took the `pick_first` slot.** Venn, opened once at a 100% clear rate, had the best marks-per-minute, won the ranking, was then hidden as below-threshold — and the playbook's top visible row read "PICK SECOND" with no first anywhere. Beyond looking broken, it advised picking a shape on evidence too thin to display. Recommendations are now assigned only among shapes that clear the threshold. Two tests added.
+- **Sections rendered DILR / VARC / QA.** PostgREST returns `in()` results in no guaranteed order; now sorted by `sections.ordinal`, so nothing hardcodes a sequence. Fixed the score cards and the pacing order together.
+- **"The one to act on" surfaced the mildest offender.** The types array is sorted best-first, so `.find()` on slow-and-wrong returned a 60%-accuracy type while a 43%-at-five-minutes type sat further down. Now ranked explicitly worst-first.
+- **A claim cited evidence that didn't support it.** "26 of your 79 VARC errors were misreads. That's a habit, not a syllabus gap." — 26 of 79 is a plurality, not a majority. The rationale now cites the 76% non-conceptual share, which is what the claim actually rests on.
+- **Skip regret blamed a shape on one instance** ("1 of them were games & tournaments"). Attribution now requires a cluster of at least two, and otherwise says it is too scattered to blame any one shape — plus a stray comma removed from the skip-regret shortfall message.
+
 ## 2026-07-30 — Synthetic fixture, and Phase 5: the analytics layer with tests
 
 **Synthetic development data** — `scripts/seed-dev-attempts.mjs`, 8 mocks / 40 sets / 368 question rows. Nothing real can be built against one mock: set-selection needs 5 sets of an archetype, calibration 30 tagged answers, pacing 3 mocks. Three safeguards, because fabricated rows in the same tables as real ones would silently corrupt a student's insights:

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { QUESTION_TIME_BUCKETS } from "@/lib/timeBuckets";
 import {
   freeSkips,
   questionMarks,
@@ -44,14 +45,13 @@ export type QuestionRow = {
   errorCause: ErrorCause | null;
 };
 
-/** Time buckets, stored as midpoints. Never presented as measurements —
- *  mock_attempts.timing_source is 'estimated' for every v1 attempt. */
-const TIME_BUCKETS = [
-  { label: "<1m", sec: 30 },
-  { label: "1–2m", sec: 90 },
-  { label: "2–4m", sec: 180 },
-  { label: "4m+", sec: 300 },
-];
+/**
+ * Buckets come from lib/timeBuckets, shared with the analytics rather than
+ * duplicated here. `timeTraps` defines a trap as "attempts in the slowest
+ * bucket", so if entry and analysis held separate copies, a change to one would
+ * silently stop the other from ever matching.
+ */
+const TIME_BUCKETS = QUESTION_TIME_BUCKETS;
 
 const CONFIDENCE = [
   { value: 1, label: "Guessed" },

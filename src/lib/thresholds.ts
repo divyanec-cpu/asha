@@ -49,7 +49,10 @@ export const MIN_INSTANCES: Record<InsightKind, number> = {
  */
 export const UNITS: Record<InsightKind, string> = {
   set_selection: "sets of that archetype",
-  skip_regret: "skipped sets, across at least 3 mocks",
+  // No comma: this is interpolated into "{n} more {unit} before this is
+  // reliable", and a trailing clause with a comma read as "3 more skipped sets,
+  // across at least 3 mocks before this is reliable."
+  skip_regret: "skipped sets across at least 3 mocks",
   time_trap: "attempts of that question type",
   quadrant: "attempts of that question type",
   calibration: "explicitly confidence-tagged answers",

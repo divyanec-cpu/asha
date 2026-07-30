@@ -7,6 +7,7 @@
  * "which shapes are actually worth my forty minutes".
  */
 
+import { meetsThreshold } from "../thresholds.ts";
 import {
   type Claim,
   type SetRow,
@@ -105,15 +106,33 @@ export function setSelectionPlaybook(sets: SetRow[]): Claim<ArchetypeStanding>[]
   //   never cleared despite being opened  → skip_on_sight
   //   otherwise rank by marks per minute  → 1st, 2nd, then only_if_third
   //   no attempts at all                  → hold
+  //
+  // ONLY shapes that clear the evidence threshold are ranked. Ranking everything
+  // and filtering afterwards produced a visible bug: a shape opened once at a
+  // 100% clear rate took the pick_first slot, was then hidden as below-threshold,
+  // and the playbook's top visible row read "PICK SECOND" with no first. Beyond
+  // looking broken, advising "pick this first" on evidence too thin to show is
+  // exactly the overclaim the thresholds exist to prevent.
   const ranked = standings
-    .filter((s) => s.timesOpened > 0 && (s.clearRate ?? 0) > 0)
+    .filter(
+      (s) =>
+        s.timesOpened > 0 &&
+        (s.clearRate ?? 0) > 0 &&
+        meetsThreshold("set_selection", s.timesOpened),
+    )
     .sort((a, b) => (b.marksPerMinute ?? 0) - (a.marksPerMinute ?? 0));
 
   ranked.forEach((s, i) => {
     s.recommendation = i === 0 ? "pick_first" : i === 1 ? "pick_second" : "only_if_third";
   });
   for (const s of standings) {
-    if (s.timesOpened > 0 && (s.clearRate ?? 0) === 0) s.recommendation = "skip_on_sight";
+    if (
+      s.timesOpened > 0 &&
+      (s.clearRate ?? 0) === 0 &&
+      meetsThreshold("set_selection", s.timesOpened)
+    ) {
+      s.recommendation = "skip_on_sight";
+    }
   }
 
   // Best first, but a shape that eats time for nothing sorts to the bottom so the

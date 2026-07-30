@@ -184,9 +184,10 @@ Any seeded content — taxonomy nodes, archetype definitions, revision-source su
 ## Current status
 
 - **Phase 1 complete (2026-07-29).** Supabase project live; migrations `0001`–`0005` applied and verified by `supabase/verify.sql` (12 tables, RLS everywhere, no write policies on reference tables). CAT taxonomy seeded and asserted against the live database: **75 nodes = 56 question types + 12 set archetypes + 7 passage domains**, across 3 sections, 10 roots. Next.js scaffolded; `npm run build` and `npm run typecheck` clean.
-- **Not yet built:** no auth, no feature routes, no analytics. `src/app/page.tsx` is a placeholder.
-- **Next (Phase 2):** phone-OTP auth and the profile screen (design screens 2a → 2b), then `/log` — DILR set entry first, since it is the signature feature and the hardest flow to make frictionless.
-- **No git repo yet.** Everything to date should land as the first commit; `.gitignore` is in place and `.env.local` is covered.
+- **Phases 2–6 complete (2026-07-30).** Phone-OTP auth and profile (2a/2b); the full logging loop — attempts list, attempt creation, DILR set sheet (1g), and VARC/QA question entry in both batch and card modes (1e/1f); the analytics layer with **45 passing tests** and no UI; and the insight screens — home (1a/1b), playbook (1c), trends and diagnostics (1h/1i/1j).
+- **Verified end to end** against a live Supabase project at a 360px viewport, including the low-data state that is the point of the honest-data rule.
+- **Not yet built:** `/account` (export + delete), `/help`, `/about` (design 2c/2d); persisting computed claims to the `insights` table with `acted_on` carry-forward; the PWA layer and Apple meta tags; the Capacitor Android build.
+- **Dev tooling:** `npm test` (node --test, runs TypeScript natively), `scripts/check-analytics.ts` (runs every analytic against the live database), `scripts/seed-dev-attempts.mjs --phone N [--delete]` (8 deterministic `[SYNTH]` mocks so thresholds can be crossed).
 - Owner: solo builder (coding novice) + Claude Code.
 - Open items carried deliberately: the IP opinion on private mock upload; legal review of privacy policy text and a real support address before any public launch.
 
