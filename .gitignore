@@ -13,7 +13,10 @@ node_modules/
 .next/
 out/
 build/
-www/
+
+# NOTE: www/ is deliberately NOT ignored. In Capacitor's remote-URL mode it is a
+# required placeholder that must exist for `cap sync` to run, so it is committed.
+# It is never served — see www/index.html.
 
 # Capacitor generated native projects
 android/build/

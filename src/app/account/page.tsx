@@ -60,7 +60,7 @@ export default async function AccountPage() {
   const mockCount = count ?? 0;
 
   return (
-    <main className="flex min-h-dvh flex-col bg-ink px-5 pb-6 pt-3">
+    <main className="safe-top safe-bottom flex min-h-dvh flex-col bg-ink px-5">
       <div className="flex items-center justify-between">
         <div>
           <div className="font-mono text-[20px] font-semibold tracking-[0.3em] text-paper">

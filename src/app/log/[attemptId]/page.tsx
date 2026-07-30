@@ -87,7 +87,7 @@ export default async function AttemptPage({
 
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
-      <div className="bg-ink px-5 pb-4 pt-2">
+      <div className="safe-top bg-ink px-5 pb-4">
         <div className="flex items-center justify-between">
           <span className="text-[15px] font-semibold text-paper">
             {one(attempt.mock_sources)?.title ?? "This mock"}

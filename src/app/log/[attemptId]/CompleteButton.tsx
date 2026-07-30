@@ -5,12 +5,23 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 /**
- * Marks the attempt logged.
+ * Marks the attempt logged, then recomputes the insight ledger.
  *
- * Insight recomputation hangs off this in Phase 5 — architecture.md specifies a
- * full recompute over the user's history on attempt completion, carrying
- * `acted_on` and `dismissed` forward. Nothing computes insights yet, so this
- * only flips the flag.
+ * architecture.md: "Insight recomputation runs on attempt completion, over that
+ * user's full history — not incrementally." The recompute carries `acted_on` and
+ * `dismissed` forward, so a dismissed insight does not reappear.
+ *
+ * The recompute is deliberately NOT allowed to fail the completion. The attempt
+ * is already saved by the time it runs, and the insight screens compute their
+ * claims live from attempt rows rather than reading this table — so a failed
+ * recompute costs an `acted_on` ledger entry, not the student's work. Blocking
+ * or rolling back the completion over it would be a far worse outcome than a
+ * stale ledger row.
+ *
+ * Reopening an attempt recomputes too: removing a mock from the completed set
+ * changes every average, and leaving the ledger describing data that no longer
+ * counts would be exactly the stale-derived-state bug the full-recompute design
+ * exists to avoid.
  *
  * Deliberately still enabled when sections are incomplete: the student may
  * genuinely not want to log every section, and refusing to let them finish would
@@ -42,6 +53,19 @@ export default function CompleteButton({
       setBusy(false);
       return;
     }
+
+    // Fire and forget by design — see the note above on why this must not fail
+    // the completion. Logged rather than surfaced: there is nothing useful the
+    // student could do about it, and the screens don't depend on it.
+    try {
+      const res = await fetch("/api/insights/recompute", { method: "POST" });
+      if (!res.ok) {
+        console.error("[insights] recompute failed:", res.status, await res.text());
+      }
+    } catch (e) {
+      console.error("[insights] recompute request failed:", e);
+    }
+
     router.push("/log");
     router.refresh();
   }

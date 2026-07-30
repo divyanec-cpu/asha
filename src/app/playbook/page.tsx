@@ -32,7 +32,7 @@ export default async function PlaybookPage() {
 
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
-      <div className="bg-ink px-5 pb-4 pt-3">
+      <div className="safe-top bg-ink px-5 pb-4">
         <div className="font-mono text-[11px] font-semibold tracking-[0.24em] text-brass">
           SET-SELECTION PLAYBOOK
         </div>

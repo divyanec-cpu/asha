@@ -75,3 +75,28 @@ body {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
+
+/*
+  ── Safe areas ────────────────────────────────────────────────────────────────
+
+  The installed iOS PWA runs with `apple-mobile-web-app-status-bar-style:
+  black-translucent` and `viewport-fit=cover`, because the design draws the ink
+  header running to the very top of the screen. The cost of that combination is
+  that iOS stops reserving space for the status bar, so anything at the top of a
+  screen renders UNDER the clock and notch unless it pads for the inset itself.
+
+  These bake the base padding into the calc rather than layering on top of a
+  Tailwind `pt-*`, because a plain `padding-top: env(...)` utility would simply
+  override the base padding and collapse the spacing on every non-notched device.
+
+  Values match the Tailwind steps they replace (pt-3 = 0.75rem, pb-3.5 =
+  0.875rem), so the layout is unchanged where the inset is zero — which is every
+  desktop browser and the Android APK.
+*/
+.safe-top {
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+}
+
+.safe-bottom {
+  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0px));
+}

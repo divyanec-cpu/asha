@@ -9,9 +9,14 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"src/lib/**/*.test.ts\"",
-    "seed": "node --env-file=.env.local scripts/seed-cat-taxonomy.mjs"
+    "seed": "node --env-file=.env.local scripts/seed-cat-taxonomy.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:apk": "cd android && gradlew.bat assembleRelease"
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.2",
     "@fontsource-variable/instrument-sans": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@supabase/ssr": "^0.12.3",
@@ -27,6 +32,8 @@
     "postcss": "^8.5.25"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

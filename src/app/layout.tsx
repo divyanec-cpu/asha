@@ -29,14 +29,26 @@ export const metadata: Metadata = {
     "attempt data across every mock you log and tells you what to change next — " +
     "with the sample size behind every claim.",
   applicationName: "ASHA",
-  // iOS ignores most of manifest.json, so home-screen behaviour is driven by
-  // these Apple-specific values. Without appleWebApp.capable, Add to Home Screen
-  // produces a Safari bookmark rather than a fullscreen app. See
+  manifest: "/manifest.webmanifest",
+  // iOS ignores the manifest's `icons` array entirely and reads apple-touch-icon,
+  // so both have to be declared. Without appleWebApp.capable, Add to Home Screen
+  // produces a Safari bookmark rather than a fullscreen app — see
   // docs/decisions.md, "iPhone is served by the PWA".
   appleWebApp: {
     capable: true,
     title: "ASHA",
+    // black-translucent lets the ink header run under the status bar, which is
+    // what the design draws. The trade-off is that iOS then stops reserving
+    // space for the status bar, so the app must pad for the safe area itself —
+    // handled by the `pt-safe` utility in globals.css.
     statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -46,6 +58,14 @@ export const viewport: Viewport = {
   // The ink header runs to the top of the screen; without this the status bar
   // area shows as a white band above it.
   themeColor: "#12151A",
+  // Stops iOS zooming the viewport when a numeric field is focused, which
+  // otherwise happens on every OTP and score input and leaves the layout
+  // scrolled sideways. maximumScale rather than user-scalable:false — pinch zoom
+  // stays available, which matters for anyone who needs it.
+  maximumScale: 5,
+  // Required for the safe-area env() values to resolve at all once
+  // black-translucent removes the reserved status-bar space.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

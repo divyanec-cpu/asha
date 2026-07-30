@@ -302,7 +302,7 @@ export default async function Page() {
 
 function Header({ initials, chip }: { initials: string; chip: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 px-5 pb-4 pt-3.5">
+    <div className="safe-top flex flex-col gap-3 px-5 pb-4">
       <div className="flex items-center justify-between">
         <div className="font-mono text-[13px] font-semibold tracking-[0.3em] text-paper">ASHA</div>
         <Link

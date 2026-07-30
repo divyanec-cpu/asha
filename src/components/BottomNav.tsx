@@ -18,7 +18,10 @@ const TABS: { id: Tab; href: string; glyph: string; label: string }[] = [
 
 export default function BottomNav({ active }: { active: Tab }) {
   return (
-    <nav className="flex flex-none border-t border-ink/[0.09] px-2 pb-3.5 pt-2.5">
+    // safe-bottom rather than pb-3.5: on an installed iOS PWA the home-indicator
+    // area sits below the viewport edge, and without the inset the LOG button
+    // ends up under it.
+    <nav className="safe-bottom flex flex-none border-t border-ink/[0.09] px-2 pt-2.5">
       {TABS.map((t) => {
         const on = t.id === active;
         return (

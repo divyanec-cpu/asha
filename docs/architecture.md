@@ -13,6 +13,21 @@ Deliberately identical to Dhruva, so nothing is re-learned and the known-good pa
 - **AI:** none in v1. The app must work end to end with zero model calls.
 - **Mobile:** web + **Android APK** via Capacitor in remote-URL mode (the Dhruva pattern) + **an installable PWA that covers iPhone**. One codebase, three ways in *(scope amendment 2026-07-29, see `decisions.md`)*.
 
+### Building the Android APK
+
+```bash
+ASHA_APP_URL=https://your-deployment.vercel.app npm run android:sync
+cd android && JAVA_HOME="C:/Program Files/Microsoft/jdk-21.0.11.10-hotspot" ./gradlew.bat assembleRelease
+```
+
+Two things that will bite otherwise:
+
+**`ASHA_APP_URL` is required and is read from the environment.** A hardcoded URL is how you ship an APK pointing at localhost — an app that works only on the build machine and shows a blank screen everywhere else. If the variable is unset, `capacitor.config.ts` warns loudly and falls back to `https://asha-app-url-not-configured.invalid`, so the failure names itself instead of looking like a network problem. Verify what actually shipped with `unzip -p android/app/build/outputs/apk/.../app-*.apk assets/capacitor.config.json`.
+
+**Gradle needs JDK 21, and the machine's `JAVA_HOME` points at 17.** Capacitor 8's Android module targets Java 21, so a build with 17 fails on `invalid source release: 21` — a message that says nothing about JDKs. Java 21 is installed and on `PATH`, but Gradle reads `JAVA_HOME` rather than `PATH`, so it must be set for the build command. Deliberately *not* pinned in `android/gradle.properties`: that would commit an absolute machine-specific path into a file every other developer and CI runner also reads.
+
+Verified: a debug APK builds clean (4.1 MB) and ships the correct `server.url`.
+
 ### How the Android app works — read this before touching `capacitor.config.ts`
 
 The Android app is a **thin shell**, not a second build of the UI. `capacitor.config.ts` sets `server.url` to the Vercel deployment and `webDir` to a placeholder directory that is never actually served (Capacitor demands one even in remote-URL mode). The WebView loads the deployed site.

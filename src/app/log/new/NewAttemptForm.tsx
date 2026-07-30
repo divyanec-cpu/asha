@@ -129,7 +129,7 @@ export default function NewAttemptForm({
 
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
-      <div className="bg-ink px-6 pb-4 pt-2">
+      <div className="safe-top bg-ink px-6 pb-4">
         <div className="font-mono text-[11px] font-semibold tracking-[0.24em] text-brass">
           LOG A MOCK
         </div>

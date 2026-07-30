@@ -243,7 +243,7 @@ export default function QuestionSheet({
   if (mode === "batch" && !taggingExceptions) {
     return (
       <main className="flex min-h-dvh flex-col bg-paper">
-        <div className="border-b border-ink/[0.09] bg-white px-5 pb-3 pt-2">
+        <div className="safe-top border-b border-ink/[0.09] bg-white px-5 pb-3">
           <div className="flex items-center justify-between">
             <span className="text-[15px] font-semibold text-ink">
               {mockTitle} · {sectionCode}
@@ -341,7 +341,7 @@ export default function QuestionSheet({
 
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
-      <div className="px-5 pb-3 pt-2">
+      <div className="safe-top px-5 pb-3">
         <div className="flex items-center justify-between">
           <span className="text-[12.5px] font-medium text-[#6B6659]">
             {mockTitle} · {sectionCode}
@@ -603,7 +603,7 @@ function Header({
   onExit: () => void;
 }) {
   return (
-    <div className="bg-ink px-5 pb-4 pt-2">
+    <div className="safe-top bg-ink px-5 pb-4">
       <div className="flex items-center justify-between">
         <span className="text-[15px] font-semibold text-paper">{title}</span>
         <button type="button" onClick={onExit} className="font-mono text-xs font-medium text-brass">

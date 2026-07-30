@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The generated Capacitor native project. `android/` contains Capacitor's
+    // own vendored native-bridge.js and Gradle build output — third-party and
+    // generated code that we neither wrote nor can fix, and which would
+    // otherwise contribute ~16 warnings that drown out real ones.
+    "android/**",
+    // The never-served Capacitor webDir placeholder (see www/index.html).
+    "www/**",
   ]),
 ]);
 

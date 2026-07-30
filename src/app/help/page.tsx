@@ -157,7 +157,7 @@ const FAQS: { group: string; items: { q: string; a: React.ReactNode }[] }[] = [
 export default function HelpPage() {
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
-      <div className="bg-ink px-5 pb-4 pt-3">
+      <div className="safe-top bg-ink px-5 pb-4">
         <div className="flex items-start justify-between">
           <div>
             <div className="font-mono text-[11px] font-semibold tracking-[0.24em] text-brass">
