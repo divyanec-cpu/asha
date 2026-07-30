@@ -2,6 +2,35 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-07-30 — Account, export, delete and help (designs 2c/2d)
+
+**What changed**
+- **`/account`** — design 2d. The product's refusals stated plainly, the four profile fields, export, delete, sign out.
+- **`/help`** — design 2c.
+- **`/api/account/delete`** — the one place a server route was unavoidable.
+- **`lib/export.ts`** — builds the export in the browser under RLS.
+- **`SignOutButton`** — trivial, but until now the only way to leave a session was clearing cookies by hand, which on a shared laptop is a real problem rather than a missing nicety.
+
+**Structural decision: account and about are one screen.** `architecture.md` had them as separate routes; design 2d puts the refusals *and* the export/delete controls on one dark screen, with the explicit note "Export and delete sit right here, not buried in settings." Followed the design. "What it won't do" is the reason a sceptical aspirant trusts the numbers, so it belongs beside the controls that prove the data is theirs — not on a marketing page nobody opens.
+
+**Export is client-side and RLS-scoped.** Every query runs as the signed-in user, so the file can only ever contain their own rows: no service-role key, and no ownership check to get wrong. A server route would need the admin client and would have to re-implement what RLS already enforces. Two formats — **JSON** (complete, every field) and **CSV** (one flat row per question and per set), because the target user already analyses mocks in a spreadsheet they built themselves, so JSON alone would be technically complete and practically useless. Only the taxonomy nodes the data actually references are included: the full shared taxonomy isn't the student's data, but without any names the export would be a wall of uuids.
+
+**Delete needs a server route, and the reason matters.** Removing the `public.users` row cascades to every attempt but leaves the `auth.users` identity behind — the phone number would still resolve and signing in again would land the person in a ghost profile. Deleting the auth identity needs the admin API and therefore the service-role key, which must never reach the browser. **The identity comes from the session, never the request body**; a route accepting a user id would let any authenticated caller delete anyone. If the auth delete fails after the profile delete succeeds, the response says the data is gone but the login remains, rather than reporting a clean success or a total failure.
+
+**A safeguard the design doesn't show:** delete requires typing the word. The action is irreversible and a single mis-tap would destroy a season's logging — the one thing in this product that cannot be re-created.
+
+**Verified**
+- **CSV export:** 459 rows (45 sets + 414 questions), taxonomy names resolved, `timing_source` on every row, chronological.
+- **JSON export:** 9 attempts, 27 sections, 45 sets, 414 questions, plus the 28 referenced taxonomy nodes.
+- **Delete route rejects unauthenticated callers** with 401.
+- **The confirmation gate:** disabled on empty, on `delet`, and on `DELETE ME` — exact match only — and "KEEP IT" backs out cleanly.
+- **Delete tested for real on a throwaway account**, never the working one: signed out, signed in as a second number, created a profile, deleted it, and confirmed the profile row was gone, `get_user_id_by_phone` returned null for that number, and the real account still had all 9 attempts. Also verified sign-out and the new-number → profile-setup path in the same pass.
+- The zero-mock home state ("NOTHING LOGGED YET") rendered on the throwaway account, so all three maturity states are now runtime-verified.
+
+**On the vanished synthetic data.** Part-way through, the `[SYNTH]` mocks were absent despite the seeder having reported success. Investigated rather than assumed: the only thing that can remove those rows is the `--delete` flag, which had been printed in a previous message as a copy-and-run command. No defect — the safeguard behaved exactly as designed, and the incident is itself evidence the delete path scopes correctly to `[SYNTH]` titles.
+
+**One copy fix:** "One file, all 1 mock" now reads "One file, your first mock".
+
 ## 2026-07-30 — Phase 6: the insight screens
 
 **What changed**

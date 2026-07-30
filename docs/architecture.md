@@ -70,9 +70,13 @@ asha/
                                 owns set archetypes → SetSheet, else QuestionSheet
       playbook/                 set-selection order + skip regret     (nav tab 2)
       trends/                   cross-mock trend, quadrant, diagnostics (nav tab 3)
-      account/                  profile, export, delete
-      help/                     short answers; "why is this locked?"
-      about/                    the refusals, stated plainly; export + delete live here too
+      account/                  design 2d — the refusals, profile, export, delete, sign out
+                                (merged with what was `about/`: the design puts both on
+                                one screen, and "what it won't do" belongs beside the
+                                controls that prove the data is yours)
+      help/                     design 2c — short answers; "why is this locked?"
+      api/account/delete/       the only route needing the admin client, because
+                                removing an auth identity requires it
     lib/
       analytics/                pure functions over attempt rows — no DB, no React
       thresholds.ts             evidence thresholds, single source of truth
