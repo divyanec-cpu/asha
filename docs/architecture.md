@@ -9,7 +9,7 @@ Deliberately identical to Dhruva, so nothing is re-learned and the known-good pa
 - **Frontend:** Next.js (App Router), React, Tailwind, TypeScript. Mobile-first: design at 390px (the handoff frame), test at 360px (the cheapest real Android). PWA-enabled — manifest + service worker.
 - **Backend / DB / Auth:** Supabase — Postgres + Auth, RLS on every table without exception.
 - **Auth:** phone + OTP via MSG91's widget in production, deterministic dev code on localhost (hCaptcha inside the widget refuses to run on localhost — a Dhruva finding, not a guess). Adults only, so no invite or consent flow: a new number goes straight to profile setup.
-- **Hosting:** Vercel, auto-deploy from `main` on a private GitHub repo.
+- **Hosting:** Vercel, auto-deploy from `main` on a private GitHub repo. Step-by-step in [deploy.md](deploy.md), including the environment variables and the one flag that must never be set in production.
 - **AI:** none in v1. The app must work end to end with zero model calls.
 - **Mobile:** web + **Android APK** via Capacitor in remote-URL mode (the Dhruva pattern) + **an installable PWA that covers iPhone**. One codebase, three ways in *(scope amendment 2026-07-29, see `decisions.md`)*.
 
