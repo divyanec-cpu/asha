@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { devModeAllowed } from "@/lib/devMode";
 import { RETRY_CHANNEL_SMS, loadMsg91Widget, widgetMessage } from "@/lib/msg91Widget";
 
 /**
@@ -19,7 +20,14 @@ import { RETRY_CHANNEL_SMS, loadMsg91Widget, widgetMessage } from "@/lib/msg91Wi
  * better than the mockup could express.
  */
 
-const DEV_MODE = process.env.NEXT_PUBLIC_MSG91_DEV_MODE === "true";
+/**
+ * Must use the same gate as the server (lib/devMode.ts), not just the
+ * NEXT_PUBLIC flag. If the client took the dev path while the server refused it,
+ * login would fail with "Missing access token" — a confusing error for what is
+ * actually a misconfiguration. A production build takes the real MSG91 path
+ * whatever the flags say.
+ */
+const DEV_MODE = devModeAllowed();
 const RESEND_SECONDS = 24;
 
 export default function AuthFlow() {

@@ -2,6 +2,40 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-07-30 — Dev-mode OTP is refused in production builds, not just flag-gated
+
+Found while preparing the first Vercel deployment, before any deployment existed.
+
+Dev mode replaces the SMS with a six-digit code derived deterministically from
+the phone number (`computeDevOtp`, salted `asha-dev-otp:`). The salt is in this
+repository. So on any publicly reachable URL, dev mode means **anyone can compute
+the OTP for any phone number and sign in as that person** — unauthenticated
+account takeover for every user, with no exploit required beyond reading the
+source.
+
+The only thing standing in the way was `MSG91_DEV_MODE === "true"`. And
+`.env.local.example` ships that flag set to `true`, because that is correct for
+localhost — which makes "paste the env template into the hosting provider's
+environment settings" both the most natural deployment step and a catastrophic,
+silent one. Nothing would look broken; logins would simply work for everybody.
+
+`lib/devMode.ts` now requires the flag **and** a non-production build. Vercel
+sets `NODE_ENV=production` for production and preview deployments alike, so both
+are closed. The client uses the same gate rather than reading `NEXT_PUBLIC_*`
+directly, so the two sides cannot disagree — if the client took the dev path
+while the server refused it, login would fail with "Missing access token", which
+is a misconfiguration wearing the costume of a bug.
+
+**Cost accepted:** OTP login cannot be exercised on a deployed preview URL;
+preview testing needs real MSG91 credentials. That is the correct trade — a
+public URL should never accept a guessable code.
+
+Verified by building for production with **both** flags set to `true` and
+confirming the dev-mode UI string and the OTP salt are absent from the client
+bundle, with a positive control proving the search worked. A test pins the
+production refusal, because the guard is one `if` and reads like a redundant
+`NODE_ENV` check to anyone who does not know why it is there.
+
 ## 2026-07-29 — Fonts via Fontsource (npm), not `next/font/google`
 
 `next/font/google` **downloads the .woff2 files from fonts.gstatic.com at build time.** That is easy to miss, because the phrase everyone repeats about it is "self-hosted" — which is true of the *served* app and false of the *build*. Any environment without egress to Google fails: an air-gapped CI, a restricted corporate network, or the sandbox this was developed in, where it produced an HTTP 500 on every page with `Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'` buried under a hundred font-fetch warnings.

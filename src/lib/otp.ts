@@ -1,11 +1,12 @@
 import { createHash } from "crypto";
+import { devModeAllowed } from "./devMode";
 
 /**
  * Server-side OTP helpers.
  *
- * Dev mode (MSG91_DEV_MODE=true): no SMS is sent. The code is derived
- * deterministically from the phone number, so the same number always gets the
- * same six digits, printed to the server console by /api/otp/send.
+ * Dev mode: no SMS is sent. The code is derived deterministically from the phone
+ * number, so the same number always gets the same six digits, printed to the
+ * server console by /api/otp/send.
  *
  * This is the ONLY OTP path that works on localhost. The real MSG91 widget runs
  * hCaptcha internally and hCaptcha refuses to run on localhost — a Dhruva
@@ -13,8 +14,13 @@ import { createHash } from "crypto";
  * domain.
  */
 
+/**
+ * Gated on more than the env flag — see lib/devMode.ts. A deterministic OTP on a
+ * public URL is unauthenticated account takeover for every user, so a production
+ * build refuses it regardless of how the environment is configured.
+ */
 export function isDevMode(): boolean {
-  return process.env.MSG91_DEV_MODE === "true";
+  return devModeAllowed();
 }
 
 /** Deterministic six-digit dev code for a 10-digit phone number. */
