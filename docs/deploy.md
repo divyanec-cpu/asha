@@ -1,5 +1,27 @@
 # Deploying ASHA
 
+**Live: https://asha-tawny.vercel.app** — project `asha` under `divya-puro-projects`,
+auto-deploying from `main` on `github.com/divyanec-cpu/asha` (private).
+
+Two things went wrong on the first deploy, both worth knowing because neither
+looked like what it was:
+
+- **Vercel detected the framework as "Other", not Next.js.** It therefore served
+  the static `public/` directory as the site root, which contains only the
+  manifest and icons and no `index.html` — so every URL returned a clean **404**
+  rather than an error. A 404 here means "serving the wrong thing successfully",
+  not "build failed". Fixed with
+  `vercel project update asha --framework nextjs --auto-detect output-directory`.
+- **Deployment Protection was on**, so the site 302-redirected to a Vercel login.
+  That would also have walled off the Capacitor WebView and the MSG91 widget —
+  the APK would have shown a Vercel login page instead of ASHA. Disabled for
+  Production; leaving it on for Preview is fine.
+
+Also note the build reported **Ready** while the app was completely
+non-functional, because Supabase clients are constructed at runtime, not build
+time. A green build here does not mean a working site.
+
+
 Vercel, auto-deploying from `main` on a private GitHub repo — the Dhruva pattern.
 The Android shell is a WebView over the deployed URL, so **a push to `main`
 updates the web app and the APK together**, with no reinstall and no store
@@ -36,7 +58,6 @@ Set these in Vercel → Settings → Environment Variables, for **Production** a
 | `SUPABASE_URL` | same value again |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the `sb_publishable_…` key |
 | `SUPABASE_SERVICE_ROLE_KEY` | the `sb_secret_…` key |
-| `NEXT_PUBLIC_SITE_URL` | the deployment URL, once known |
 | `MSG91_AUTH_KEY` | from MSG91 |
 | `NEXT_PUBLIC_MSG91_WIDGET_ID` | from MSG91 |
 | `NEXT_PUBLIC_MSG91_TOKEN_AUTH` | from MSG91 |

@@ -34,3 +34,12 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# `vercel link` appends `.vercel` and a bare `.env*` here automatically. The
+# duplicate `.vercel` is removed above; `.env*` is replaced by the negation
+# below, because a bare `.env*` also hides .env.local.example — the committed
+# template that tells a new developer which variables exist. It stays tracked
+# once committed, so the effect is subtle: the file would silently fail to be
+# re-added if it were ever deleted and restored.
+.env*
+!.env.local.example
