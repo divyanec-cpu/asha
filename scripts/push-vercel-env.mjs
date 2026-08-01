@@ -119,6 +119,32 @@ if (!APPLY) {
 }
 
 console.log("");
+
+/** Blocking sleep — this is a sequential CLI script, so no event loop to yield to. */
+function sleep(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Retries with backoff.
+ *
+ * The first real run of this script set all seven variables on production and
+ * silently set NONE on preview — fourteen API calls in about a minute, which
+ * Vercel appears to rate-limit. Re-running the identical code path later worked
+ * for both targets, so the calls are correct and the failure was transient. That
+ * is precisely the failure a one-shot loop hides: production looks fine, preview
+ * is quietly empty, and nothing complains until a preview deployment breaks.
+ */
+function runWithRetry(args, input, attempts = 3) {
+  let last;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    last = spawnSync("npx", args, { input, encoding: "utf8", shell: true });
+    if (last.status === 0) return { ...last, attempt };
+    if (attempt < attempts) sleep(attempt * 2000);
+  }
+  return { ...last, attempt: attempts };
+}
+
 let failures = 0;
 
 for (const key of REQUIRED) {
@@ -130,21 +156,43 @@ for (const key of REQUIRED) {
       shell: true,
     });
 
-    const res = spawnSync("npx", ["vercel", "env", "add", key, target], {
-      input: `${value}\n`,
-      encoding: "utf8",
-      shell: true,
-    });
-
+    const res = runWithRetry(["vercel", "env", "add", key, target], `${value}\n`);
     const ok = res.status === 0;
     if (!ok) failures++;
-    console.log(`  ${ok ? "ok  " : "FAIL"} ${key} → ${target}${ok ? "" : `  ${(res.stderr || "").trim().split("\n").pop()}`}`);
+
+    const retried = res.attempt > 1 ? ` (after ${res.attempt} attempts)` : "";
+    const why = ok ? "" : `  ${(res.stderr || res.stdout || "").trim().split("\n").pop()}`;
+    console.log(`  ${ok ? "ok  " : "FAIL"} ${key} → ${target}${retried}${why}`);
+
+    // Deliberate pacing between calls, for the same reason as the retry.
+    sleep(400);
   }
+}
+
+// Verify against Vercel rather than trusting the exit codes — the whole point of
+// this section is that the first run reported nothing wrong.
+console.log("\n  verifying against Vercel...");
+const ls = spawnSync("npx", ["vercel", "env", "ls"], { encoding: "utf8", shell: true });
+const listed = ls.stdout ?? "";
+const absent = [];
+for (const key of REQUIRED) {
+  for (const target of TARGETS) {
+    const row = new RegExp(`^\\s*${key}\\s+\\S+\\s+.*${target}`, "im");
+    if (!row.test(listed)) absent.push(`${key} → ${target}`);
+  }
+}
+
+if (absent.length) {
+  console.log("\n  NOT PRESENT on Vercel after upload:");
+  for (const m of absent) console.log(`    ${m}`);
+  console.log("\n  Re-run this script; the failure is usually transient.\n");
+  process.exit(1);
 }
 
 console.log(
   failures === 0
-    ? "\n  All variables set. Redeploy for them to take effect:  npx vercel --prod\n"
+    ? "\n  All variables present on production and preview.\n" +
+        "  Redeploy for them to take effect:  npx vercel --prod\n"
     : `\n  ${failures} operation(s) failed — see above.\n`,
 );
 process.exit(failures === 0 ? 0 : 1);
