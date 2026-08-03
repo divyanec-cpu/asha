@@ -2,6 +2,67 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-01 — Single-mock facts: findings that need no evidence threshold
+
+**The problem this solves is the product's weakest point.** A student paid ten
+minutes to log a mock and got back a restatement of what they had just typed in
+("you attempted 4 DILR sets and cleared 1"), with everything genuinely useful
+locked until mock three or five. The builder put it directly: *why would a student
+use ASHA when they can't do anything meaningful from it?* That is a fair
+description of the one-mock experience as it stood.
+
+The fix is not to lower the thresholds. It is to notice that **not every finding
+is a statistical claim.**
+
+Everything in `setSelection.ts` / `questions.ts` / `trend.ts` generalises from a
+sample to "how you tend to perform", so it genuinely needs enough observations to
+be more than noise. But two other categories exist:
+
+- **Deductive** — true by the marking rules rather than inferred from a sample.
+  "A wrong TITA answer is not penalised, so leaving one blank was never the better
+  choice" follows from `exam_configs`. One observation is enough, because nothing
+  is being generalised.
+- **Descriptive** — a count of what happened in one paper. `data-model.md` already
+  permitted these at any n: *"Descriptive counts of what the student logged are
+  always allowed at any n, because they are facts rather than claims."* The
+  capability was already sanctioned; it just wasn't built.
+
+`lib/analytics/facts.ts` emits four: blank TITA answers, a set walked past that
+would have cleared, time spent on sets that returned nothing, and answers the
+student felt certain about and got wrong. Ordered cheapest-fix-first, so blank
+TITAs outrank everything.
+
+**Where marks figures are deliberately absent.** Blank TITAs carry no marks
+number — a blind numeric guess has a poor chance of landing, so quantifying the
+"loss" would overclaim; the zero downside is the finding. Regretted skips carry no
+marks number either, because "would have cleared" is the student's own post-hoc
+judgement and "cleared" does not imply every question correct. Both cases could
+easily have had a plausible number attached, and both would have been invention.
+
+**The honesty constraint lives entirely in the wording**, which is why a test
+enforces it. These findings bypass the thresholds, and that is only defensible
+while every sentence describes *this paper*. A test asserts no fact contains
+*always / never (except the deduction) / usually / tends to / every time / your
+pattern / keep / habit / typically*. Without it, one future copy edit turns a
+sanctioned fact into an unearned statistical claim, and nothing would fail.
+
+Home now shows **FROM \<mock title\>** above **ACROSS ALL N MOCKS**, so the scope
+of each group of statements is named rather than implied. At one mock this turned
+a screen of locked cards into three specific actionable findings.
+
+**Also: locked cards now link to `/help`.** Help was two taps deep behind an
+unlabelled 30px avatar, and the bottom nav's four tabs are all data views with no
+hint that an explanation exists. For a product whose argument is "you can check
+our reasoning", that was the wrong place for it. The link sits on the locked card
+because that is the exact moment the question arises, and design 2c already
+treats "why is this locked?" as the main thing Help answers.
+
+**What was rejected:** adding in-app test-taking. If students won't stick around,
+that is the expensive wrong fix — it competes with SimCAT and AIMCAT on their own
+ground, needs a question bank that cannot legally ship (rule 2), and makes ASHA a
+worse version of something that already exists. Shortening time-to-first-insight
+addresses the same concern without touching the scope fence.
+
 ## 2026-07-30 — Dev-mode OTP is refused in production builds, not just flag-gated
 
 Found while preparing the first Vercel deployment, before any deployment existed.

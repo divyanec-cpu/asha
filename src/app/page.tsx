@@ -4,6 +4,7 @@ import AuthFlow from "./AuthFlow";
 import BottomNav from "@/components/BottomNav";
 import { EvidenceChip, Eyebrow, InsightCard, InsightCardDark, LockedCard } from "@/components/Insight";
 import { loadAnalyticsData } from "@/lib/analytics/load";
+import { mockFacts } from "@/lib/analytics/facts";
 import { calibration, errorCauses, quadrant } from "@/lib/analytics/questions";
 import { setSelectionPlaybook, skipRegret } from "@/lib/analytics/setSelection";
 import { globalConfidence, pacing, trend } from "@/lib/analytics/trend";
@@ -111,6 +112,15 @@ export default async function Page() {
   const latestSections = sections.filter((s) => s.mockId === latest.id);
   const delta = tr.status === "ok" ? tr.data.deltaVsPreviousThree : null;
 
+  // Facts about the latest mock only. mockFacts does no filtering of its own —
+  // handing it the whole season would produce sentences that read as being about
+  // one paper, which is exactly the overclaim its wording is designed to avoid.
+  const latestFacts = mockFacts({
+    sets: sets.filter((s) => s.mockId === latest.id),
+    questions: questions.filter((q) => q.mockId === latest.id),
+    scheme,
+  });
+
   // ── "Change this before the next mock" ───────────────────────────────────
   // Ordered by how cheap the fix is, not by how bad the number looks. A shape
   // that costs whole sets for nothing outranks a percentage.
@@ -198,11 +208,19 @@ export default async function Page() {
 
         {/* The actionable stack. */}
         <div className="flex flex-col gap-2.5">
-          <Eyebrow>
-            {liveKinds.length === 0
-              ? "HERE'S WHAT'S LOGGED, AND NOTHING MORE"
-              : `CHANGE THIS BEFORE MOCK ${mocks.length + 1}`}
-          </Eyebrow>
+          {/*
+            Suppressed when facts are present, because "FROM SIMCAT 12" and
+            "ACROSS ALL 9 MOCKS" below already section the stack — and they do it
+            better, by naming the scope each group of statements actually covers.
+            Two eyebrows in a row read as a mistake.
+          */}
+          {latestFacts.length === 0 && (
+            <Eyebrow>
+              {liveKinds.length === 0
+                ? "HERE'S WHAT'S LOGGED, AND NOTHING MORE"
+                : `CHANGE THIS BEFORE MOCK ${mocks.length + 1}`}
+            </Eyebrow>
+          )}
 
           {/* At one mock nothing is live, so state the facts and refuse to call
               them a pattern. This is design 1b's middle card verbatim in spirit. */}
@@ -215,6 +233,38 @@ export default async function Page() {
                 We won&rsquo;t call any of that a pattern yet. It isn&rsquo;t one.
               </p>
             </div>
+          )}
+
+          {/*
+            Facts about the mock just logged — deductive or descriptive, so no
+            evidence threshold applies (see lib/analytics/facts.ts). This exists
+            because the ten minutes spent logging previously bought back a
+            restatement of what had just been typed in, with everything useful
+            locked until mock three.
+
+            Shown at EVERY mock count, not only the low-data state: "you left
+            three type-in answers blank on this paper" is worth acting on at mock
+            one and at mock twelve alike, and it is not something the pattern
+            claims below can ever say.
+          */}
+          {latestFacts.length > 0 && (
+            <>
+              <Eyebrow>FROM {latest.title.toUpperCase()}</Eyebrow>
+              {latestFacts.slice(0, 3).map((fact) => (
+                <div
+                  key={fact.kind}
+                  className="rounded-[14px] border border-brass/40 bg-brass/[0.06] px-4 py-3.5"
+                >
+                  <div className="text-[14.5px] font-semibold leading-snug text-ink text-pretty">
+                    {fact.headline}
+                  </div>
+                  <p className="mt-1 text-[12.5px] leading-relaxed text-[#6B6659] text-pretty">
+                    {fact.detail}
+                  </p>
+                </div>
+              ))}
+              {liveKinds.length > 0 && <Eyebrow>ACROSS ALL {mocks.length} MOCKS</Eyebrow>}
+            </>
           )}
 
           {skipOnSight?.status === "ok" && (

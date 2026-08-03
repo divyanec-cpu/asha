@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ConfidenceLabel } from "@/lib/thresholds";
 
 /**
@@ -42,6 +43,19 @@ export function LockedCard({
         )}
       </div>
       <p className="mt-1 text-[12px] leading-relaxed text-mute-400 text-pretty">{message}</p>
+      {/*
+        Links to the thresholds explanation from the exact moment the question
+        arises. Help was otherwise two taps deep behind an unlabelled avatar,
+        which undercuts a product whose argument is "you can check our
+        reasoning" — and design 2c treats "why is this locked?" as the main
+        thing Help exists to answer.
+      */}
+      <Link
+        href="/help"
+        className="mt-1.5 inline-block font-mono text-[10px] font-medium tracking-[0.08em] text-mute-400 underline decoration-mute-400/40"
+      >
+        WHY IS THIS LOCKED?
+      </Link>
       {pct !== null && (
         <div className="mt-2.5 flex gap-1">
           <span className="h-1 rounded-sm bg-brass" style={{ flex: Math.max(pct, 2) }} />
