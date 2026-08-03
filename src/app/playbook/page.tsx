@@ -5,6 +5,9 @@ import { loadAnalyticsData } from "@/lib/analytics/load";
 import { setSelectionPlaybook, skipRegret } from "@/lib/analytics/setSelection";
 import type { Recommendation } from "@/lib/analytics/setSelection";
 import { MIN_INSTANCES } from "@/lib/thresholds";
+import RevisionQueue from "./RevisionQueue";
+import { dueToday } from "@/lib/analytics/revision";
+import { loadQueue, todayIso } from "@/lib/revisionStore";
 
 /**
  * The set-selection playbook — design 1c, the ranked ledger.
@@ -29,6 +32,11 @@ export default async function PlaybookPage() {
   const live = playbook.filter((c) => c.status === "ok");
 
   const totalSets = sets.length;
+
+  // The revision queue. Read here rather than reconciled — reconciliation happens
+  // on attempt completion, so rendering the playbook never writes.
+  const queue = await loadQueue();
+  const { due, deferred } = dueToday(queue, todayIso());
 
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
@@ -131,6 +139,19 @@ export default async function PlaybookPage() {
             )}
           </>
         )}
+
+        {/*
+          The revision queue lives here rather than behind a fifth nav tab: the
+          bottom nav is fixed at four by the design, and this belongs next to the
+          playbook because both answer "what do I do before the next mock" — the
+          playbook for set selection, this for the concept gaps.
+        */}
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="font-mono text-[10.5px] font-medium tracking-[0.16em] text-mute-500">
+            REVISE TODAY
+          </div>
+          <RevisionQueue due={due} deferred={deferred} totalTracked={queue.length} />
+        </div>
 
         <div className="mt-auto">
           <BottomNav active="playbook" />

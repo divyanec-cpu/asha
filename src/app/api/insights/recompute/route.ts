@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recomputeInsights } from "@/lib/analytics/persist";
+import { reconcileRevisionQueue } from "@/lib/revisionStore";
 
 /**
  * Recomputes and persists the caller's insight ledger. Called after an attempt
@@ -16,5 +17,18 @@ export async function POST() {
   if (!result.ok) {
     return NextResponse.json(result, { status: result.error === "Not signed in" ? 401 : 500 });
   }
-  return NextResponse.json(result);
+
+  // The revision queue reconciles on the same trigger, since it reads the same
+  // completed-attempt history. Kept separate from the insight recompute so a
+  // failure in one cannot lose the other — and a queue failure must not fail the
+  // response, for the same reason the recompute itself cannot fail a completion:
+  // the attempt is already saved and no screen depends on this having run.
+  let revision: Awaited<ReturnType<typeof reconcileRevisionQueue>> | null = null;
+  try {
+    revision = await reconcileRevisionQueue();
+  } catch (e) {
+    console.error("[revision] reconcile failed:", e);
+  }
+
+  return NextResponse.json({ ...result, revision });
 }

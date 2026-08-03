@@ -1,6 +1,6 @@
 # Data Model
 
-Status: **live.** Migrations `0001`–`0005` applied 2026-07-29 and verified by `supabase/verify.sql`; the CAT taxonomy is seeded (75 nodes). **Twelve tables across five migrations** — `users`; the four shared reference tables; the five-deep attempt chain; `insights`; and `revision_queue` (reserved). Every table has Row Level Security; shared reference tables are read-only to authenticated users and written only by service-role seed scripts.
+Status: **live.** Migrations `0001`–`0005` applied 2026-07-29 and verified by `supabase/verify.sql`; the CAT taxonomy is seeded (75 nodes). **Twelve tables across five migrations** — `users`; the four shared reference tables; the five-deep attempt chain; `insights`; and `revision_queue` (live as of v2, 2026-08-01). Every table has Row Level Security; shared reference tables are read-only to authenticated users and written only by service-role seed scripts.
 
 *(Corrected 2026-07-29: this line previously read "nine tables across four migrations". Counted from the migration files it is twelve across five — `0005` added none, but the original nine undercounted.)*
 
@@ -123,3 +123,31 @@ Defined and seeded, but nothing reads them in v1. Listed so no one wires a UI to
 ## Functions (continued)
 
 - **`assert_passage_domain_valid()`** *(trigger function, `0005`)* — validates that a non-null `question_attempts.passage_domain_id` points at a `kind = 'passage_domain'` leaf. Not `security definer`; runs as the invoker, reading only the shared read-for-authenticated taxonomy.
+
+## `revision_queue` — no longer reserved (2026-08-01)
+
+Live as of v2. The table shape is unchanged from `0004`; no migration was needed,
+which is the payoff for settling it early.
+
+- One row per `(user_id, question_type_id)` — it schedules **topics, not
+  questions**. Do not repurpose it for flashcards without reopening the content
+  and copyright questions.
+- `box` 1–5 maps to 1-3-7-14-30 days, defined once in
+  `lib/analytics/revision.ts` as `BOX_INTERVAL_DAYS`. The list length is what pins
+  the schema's `box between 1 and 5` check — do not extend one without the other.
+- Rows are created only from the student's own `conceptual` error tags. Misreads,
+  careless slips and time pressure are excluded: they are not knowledge gaps, and
+  telling them apart is the whole reason `error_cause` is collected.
+- **No evidence threshold applies.** A queue entry is a fact about what the
+  student tagged, not a claim about their ability — the same reasoning that
+  exempts `lib/analytics/facts.ts`.
+
+### Derived measures added
+
+| On-screen | Formula | Gate |
+|---|---|---|
+| Revision due date | `today + BOX_INTERVAL_DAYS[box - 1]` | — |
+| Promotion ("revised it") | `box + 1`, capped at 5, rescheduled by the new interval | — |
+| Demotion | a `conceptual` error in that type on a mock not yet applied → box 1, due tomorrow | — |
+| Topics shown today | `due_date <= today`, most overdue first, capped at 5 | — |
+| Deferred count | overdue topics beyond the cap, reported rather than truncated | — |

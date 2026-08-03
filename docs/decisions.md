@@ -2,6 +2,56 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-01 — The v1 → v2 gate was overridden while unmet
+
+Recording this plainly, because the alternative — editing the gate to match
+reality, or simply not mentioning it — is how a project loses the ability to tell
+itself the truth.
+
+**The gate:** *"v1 → v2 requires: a real user has logged ≥5 mocks and returned to
+the set-selection view before their next mock. No gate, no next stage."*
+
+**The state when it was overridden:** one real mock, logged by the builder while
+testing the flow. Eight synthetic mocks from a fixture, which are not evidence of
+anything except that the code runs. Four `acted_on` insights, all set by hand
+while verifying carry-forward. On the metric the gate actually measures, the count
+was zero.
+
+**The decision was the builder's, made explicitly after being shown those
+numbers.** They own the project and that is a legitimate call. What follows is the
+honest accounting of what it costs, not a re-litigation.
+
+**What is now unvalidated.** The gate existed to answer one question before more
+was built: *is the set-selection playbook worth the ten minutes it costs to log a
+mock?* Nobody knows. The builder raised exactly this doubt two days ago — "why
+would a student use ASHA when they can't do anything meaningful from it" — and the
+gate was the mechanism designed to answer it with evidence rather than opinion.
+Building v2 first means the revision queue rests on the assumption that the
+diagnosis underneath it is valuable. If that assumption is wrong, v2 makes the
+product larger rather than better.
+
+**Why this specific piece is nonetheless the low-risk choice.** Of the three
+things v2 could have been, the revision queue is the only one that adds no new
+dependency of any kind: the `revision_queue` table already exists with the right
+shape, it needs no practice content (so no copyright exposure), and no AI (so no
+runtime cost, no caps, no fallback path). It is also the piece that most directly
+answers the builder's own critique, because it converts a diagnosis into something
+to do. If v2 had to open, this was the cheapest door.
+
+**What deliberately did not open.** OCR, micro-quizzes and AI all stay out, each
+for its own reason and none of them softened. Overriding one gate is not
+permission to treat the fence as advisory — and the **v2 → v3 gate still stands**.
+
+**Still owed from v1**, and not cancelled by moving on: the `/account` footer
+renders PRIVACY, TERMS and CONTACT as dead text with no routes behind them, on the
+same screen as a working permanent-delete button. Real-OTP login has never been
+exercised on a physical phone. There is no signing keystore. None of that got
+easier by starting v2.
+
+**The check to apply later:** if five real mocks eventually get logged and the
+playbook turns out not to change anyone's set selection, this entry is the record
+of the moment that became harder to find out.
+
 ## 2026-08-01 — Single-mock facts: findings that need no evidence threshold
 
 **The problem this solves is the product's weakest point.** A student paid ten

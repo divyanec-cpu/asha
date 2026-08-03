@@ -125,6 +125,33 @@ The single biggest failure mode across previous builds was scope creep. This is 
 
 **Advance gates.** v1 → v2 requires: a real user has logged **≥5 mocks** and returned to the set-selection view before their next mock. v2 → v3 requires: **>40% of active users log ≥3 mocks** and self-report that an insight changed their set-selection behaviour. No gate, no next stage.
 
+> **The v1 → v2 gate was OVERRIDDEN on 2026-08-01 by explicit builder decision, unmet.** At the time of override: **1 real mock logged** (by the builder, while testing) against a requirement of 5, and the 4 `acted_on` insights had been set by hand while verifying carry-forward. On the metric that matters the count was effectively zero.
+>
+> This is recorded rather than quietly erased because the gate is the mechanism that was supposed to stop a fourth build dying of scope creep, and this is the first time it was tested against a real request. **The v2 → v3 gate still stands, and overriding this one is not a precedent for overriding that one.** Reasoning in `docs/decisions.md`.
+
+## Scope boundary — v2 (opened 2026-08-01)
+
+**IN v2:**
+- **Spaced revision queue over question types.** Uses the `revision_queue` table as originally shaped — `question_type_id`, Leitner box 1–5 → 1-3-7-14-30 days. Needs no practice content and no AI. See "Revision queue discipline" below.
+
+**Still OUT, and not opened by this amendment:**
+- **OCR of result screenshots.** Would need runtime AI, which v1 deliberately has none of, plus caps, success-only logging, a non-AI fallback and a monthly bill.
+- **Micro-quizzes with practice content.** Requires original hand-written or agent-drafted-and-hand-verified items; the content effort dwarfs the code, and no decision has been taken on commissioning it.
+- **Any AI at all.** Unchanged from v1.
+- Everything else on the v1 OUT list.
+
+**Still owed from v1, and not superseded:** a real privacy policy and terms behind the `/account` footer links (which currently render as dead text), a real support address, real-OTP login verification on a physical phone, and a signing keystore for a release APK.
+
+## Revision queue discipline
+
+The queue is built from **the student's own `error_cause` tags**, never from ASHA's inference. When they marked a question `conceptual`, they said it was a concept gap; the queue only remembers that and brings it back. So a topic entering the queue is a *fact about what they told us*, not a claim about their ability — which is why it needs no evidence threshold, exactly as `lib/analytics/facts.ts` needs none.
+
+That distinction is load-bearing. "Revise Time & Work" derived from one self-tagged concept error is honest. "You are weak at Time & Work" derived from the same single error would not be, and must never be the wording.
+
+- **Promotion and demotion come from real mock performance, not a self-quiz.** Marking a topic revised advances its box. A later conceptual error in that same type sends it back to box 1. That is stronger evidence than a self-administered test, and it is data ASHA already has.
+- **Never show an infinite backlog.** The queue is capped per day, and what does not fit is deferred rather than displayed. A queue of forty topics is a queue nobody opens.
+- **`revision_queue` remains keyed on `question_type_id`, not `question_id`.** It schedules topics, not questions. Do not repurpose it for flashcards without reopening the content and copyright questions.
+
 ## Design system
 
 The UI is built from the Claude Design handoff bundle (`CAT exam prep mobile app-handoff.zip` → `Asha Mobile.dc.html`, 14 screens across 2 turns). **Match the mockup's visual output; do not copy its prototype internals.**
@@ -193,6 +220,8 @@ Any seeded content — taxonomy nodes, archetype definitions, revision-source su
 - Open items carried deliberately: the IP opinion on private mock upload; legal review of privacy policy text and a real support address before any public launch.
 
 ## Amendment log
+
+- **2026-08-01** — **v1 → v2 gate overridden, unmet**, by explicit builder decision. v2 opened for the spaced revision queue only. OCR, micro-quizzes and AI stay out. Reasoning in `docs/decisions.md`.
 
 - **2026-07-29** — Renamed *Sextant* → **ASHA**, to match the design handoff.
 - **2026-07-29** — Web + Android APK moved from v3 into v1 scope, via Capacitor in remote-URL mode, mirroring Dhruva. Reasoning in `docs/decisions.md`.
