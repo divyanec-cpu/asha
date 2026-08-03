@@ -15,8 +15,14 @@ The structural difference from Dhruva: there is **no consent/invite graph**. Use
   **Correction (2026-07-29):** this previously said "GMAT and MAT rows exist so the schema is exercised but no UI exposes them." They do not exist — `seed-cat-taxonomy.mjs` inserts CAT only, which is what CLAUDE.md's scope fence requires ("GMAT and MAT configs — v3; the schema supports them, the seed data and UI do not ship"). The `code` check constraint permits them; no row does.
 
   Consequence, noticed while building the profile screen: the design's greyed-out **"GMAT — soon"** chip does not render, because `ProfileForm` derives its inactive-exam chips from rows in this table rather than hardcoding exam names. That is the correct behaviour — seeding a GMAT row with `active = false` would make the chip appear with no code change. It is recorded here so nobody "fixes" the missing chip by hardcoding a string.
+
+  **Update (2026-08-03, v3):** the GMAT and MAT rows now exist, seeded by `scripts/seed-gmat-mat.mjs` with **`active = false`**, so the "GMAT — soon" chip renders as the design intended and no student can select either exam. `adaptive = true` for GMAT, `false` for MAT.
 - **`exam_configs`** — id, exam_id, effective_year, total_questions, total_time_min, mark_correct, mark_wrong_mcq, mark_wrong_numeric, section_order_fixed, review_edit_limit (GMAT's 3-per-section; null elsewhere), unattempted_penalty (jsonb — XAT's −0.10-beyond-8 rule; null for CAT), notes. Unique on (exam_id, effective_year). **Versioned by year deliberately**: a mid-season pattern change is a data edit, never a code change.
-- **`sections`** — id, exam_id, code, name, ordinal, time_limit_min, question_count, has_own_timer, counts_toward_score. Unique on (exam_id, code). `counts_toward_score = false` handles MAT's Indian & Global Environment and XAT's GK without a special case in scoring code.
+- **`sections`** — id, exam_id, code, name, ordinal, time_limit_min, question_count, has_own_timer, counts_toward_score. Unique on (exam_id, code). `counts_toward_score = false` handles a section excluded from the composite — MAT's fifth section, XAT's GK — without a special case in scoring code.
+
+  **Naming correction (2026-08-03):** `0002_taxonomy.sql` comments this column `-- false: MAT's IGE, XAT's GK`, and this line previously named "MAT's Indian & Global Environment". **That section was renamed "Economic & Business Environment"** in AIMA's MAT 2.0 revision; the old name no longer exists. The migration comment is left as applied history rather than rewritten.
+
+  **`time_limit_min IS NULL` means the exam sets no sectional clock**, and `has_own_timer` must be `false` to match. MAT is the first such exam — 120 minutes across all five sections, moving freely. The two fields disagreeing is how a fabricated countdown reaches the screen, so `seed-gmat-mat.mjs` asserts they cannot; see the `sectionClock` note under *Derived measures*.
 - **`question_types`** — id, exam_id, section_id, parent_id (self-referencing), code (unique per exam), name, **kind** (`question_type`/`set_archetype`/`passage_domain`), depth, is_leaf, description, sort_order, active. Unique on (exam_id, code).
 
   This is the configuration layer. Question types, DILR set archetypes and VARC passage domains all live in **one tree** so aggregation walks them identically. `kind` records the level at which a node is tagged, and which column carries it:
@@ -28,6 +34,8 @@ The structural difference from Dhruva: there is **no consent/invite graph**. Use
   | `passage_domain` | a question's RC passage | `question_attempts.passage_domain_id` |
 
   Seeded by `scripts/seed-cat-taxonomy.mjs`: **75 CAT nodes** (VARC 21, DILR 18, QA 36) — **56 question types, 12 DILR set archetypes, 7 VARC passage domains**. Only `is_leaf` rows are selectable when logging, and a picker must filter on `kind` as well: without that, "Economics / business" would be offered as an RC *question type*. The seed script asserts all of these counts against the live database and exits non-zero on a mismatch.
+
+  Seeded by `scripts/seed-gmat-mat.mjs` (2026-08-03): **33 GMAT nodes** (QR 13, VR 15, DI 5) and **57 MAT nodes** (LC 13, ICR 9, MS 21, DAS 8, EBE 6). **All 90 are `kind = 'question_type'`** — no set archetypes and no passage domains for either exam, asserted as zero so the choice cannot be reversed by accident. Reasoning in `decisions.md`, and the MAT half of it is a real deferral rather than a shrug: MAT's Data Analysis & Sufficiency genuinely does present 4–5 selectable DI sets, but archetypes would force the *whole* section to log by set and its standalone Data Sufficiency questions would have nowhere to go. That needs a mixed-mode section, which is a schema change.
 
 ## Per-user tables
 
@@ -96,6 +104,7 @@ Descriptive counts of what the student logged ("you attempted 4 DILR sets and cl
 | Marks lost to guessing | `n_guesses × (p_correct × mark_correct + (1 − p_correct) × mark_wrong_mcq)`, where `p_correct` is measured accuracy at confidence 1. **Only emit when the loss clears a materiality floor** — under CAT's +3/−1 the breakeven accuracy is 25%, so guessing at 22% costs about 0.12 marks per guess and the honest finding is nearly neutral | 30 tagged answers **and** loss past the materiality floor |
 | Pacing (marks by quarter) | `section_attempts.quarter_marks` as entered by the student from their mock platform's own analysis. **Not derivable** — neither v1 entry flow captures attempt order, so there is no honest way to infer it from time buckets | 3 mocks **with** quarter marks present |
 | Global confidence chip ("12 MOCKS · HIGH CONFIDENCE") | no live insight → "no confident reading yet"; any live → `low`; majority of live kinds at ≥2× threshold → `medium`; at ≥3× → `high` | — |
+| Section clock during a timed run (`lib/sectionClock.ts`) | `time_limit_min` present → countdown `time_limit_min × 60 − elapsed`, auto-stop at zero, urgent inside 120s, bar = `elapsed / total`. `time_limit_min IS NULL` → **count up**, never expires, never urgent, bar = `current_question / question_count`. Not a claim about the student, so no threshold — but it is listed here because it is a number on screen, and until 2026-08-03 it was a fabricated one: the code read `(timeLimitMin ?? 40) * 60`, which would have imposed a 40-minute limit on MAT sections that have none | — |
 
 ## Reserved in practice
 
@@ -105,7 +114,9 @@ Defined and seeded, but nothing reads them in v1. Listed so no one wires a UI to
 - **`DILR.SKILL.*`** (4 taxonomy nodes) — DILR is logged at set level in v1, so no DILR question rows exist to carry a skill tag. The quadrant therefore covers VARC and QA question types only, which matches the design.
 - **`mock_attempts.timing_source = 'measured'`** — impossible until the v3 in-app timer.
 - **`question_attempts.order_index`** — see the caveat above.
-- **`exams` rows for GMAT and MAT** — present so the schema is exercised; no UI exposes them.
+- **`exams` rows for GMAT and MAT** — seeded 2026-08-03 with their configs, sections and taxonomies, but **`active = false`**, so the only UI that reads them is the profile form's "soon" chip list. Everything downstream of them — 8 sections, 90 taxonomy nodes, both marking configs — is unread until `active` is flipped.
+
+  **Read before flipping GMAT's:** `exam_configs.mark_correct/mark_wrong_mcq/mark_wrong_numeric` are `not null`, but GMAT Focus is adaptive with IRT scoring (205–805) and has **no per-question marks**. They are seeded `1 / 0 / 0`, which makes `marks_earned` a **raw count of correct answers** — honest as a count, and *not* a GMAT score. Marks-per-minute reads as correct-answers-per-minute. The student's real score belongs in `mock_attempts.total_score`, reported, never computed. Activating GMAT means first auditing every screen that renders a marks figure for wording that would present that count as a score.
 
 ## Functions
 

@@ -73,6 +73,9 @@ asha/
     verify.sql                  read-only PASS/FAIL check that 0001–0005 applied
   scripts/
     seed-cat-taxonomy.mjs       75 CAT nodes, service-role, idempotent, asserts counts
+    seed-gmat-mat.mjs           GMAT (33 nodes) + MAT (57), both seeded active=false;
+                                asserts marking configs and section flags field by
+                                field, and that CAT's 75 nodes are untouched
   .env.local.example            environment template; .env.local is gitignored
   src/
     app/
@@ -96,6 +99,10 @@ asha/
       analytics/                pure functions over attempt rows — no DB, no React
       thresholds.ts             evidence thresholds, single source of truth
       derived.ts                published formulas for every on-screen derived number
+      sectionClock.ts           timed-run clock as a pure function. Extracted because
+                                exams differ on whether a section HAS a clock at all
+                                (MAT does not), and the fallback that papered over
+                                that was inventing a 40-minute limit
       supabase/                 browser + server clients
   capacitor.config.ts           remote-URL shell config — see above
   www/                          never-served placeholder Capacitor requires

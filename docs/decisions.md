@@ -2,6 +2,140 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-03 — GMAT and MAT: what was seeded, and the four things that are not what they look like
+
+v3 scope item 2. Reference data only — no analytics changed, and no analytic
+branches on exam code.
+
+### 1. GMAT's marking numbers are not GMAT scoring, and the exam ships inactive because of it
+
+`exam_configs.mark_correct / mark_wrong_mcq / mark_wrong_numeric` are `not null`.
+The GMAT Focus Edition is **computer-adaptive and scored by item response
+theory**: a question's contribution depends on its difficulty and on the whole
+response pattern. Total 205–805, sections 60–90. **There is no per-question mark,
+and no arithmetic over per-question marks can reproduce a GMAT score.**
+
+The row cannot decline to answer, so it is seeded `1 / 0 / 0`. That encodes one
+thing truthfully — GMAT applies no penalty for a wrong answer — and makes
+`marks_earned` a **raw count of correct answers**. Honest as a count. Not a score.
+Marks-per-minute for GMAT reads as "correct answers per minute".
+
+This is the whole reason both exams are seeded `active = false`. The profile form
+already separates active from inactive exams and renders the rest as "GMAT —
+soon", so no student can select them. CLAUDE.md's v3 entry opens *"GMAT and MAT
+configs. **Seed data only:** exam rows, `exam_configs` marking per pattern,
+sections, and a taxonomy per exam."* Seed data, not UI — and activating GMAT
+before auditing every screen for wording that would present a raw-correct count
+as a score would ship exactly the overclaim rule 3 forbids.
+
+Flipping `active` is a one-row update. The audit is the prerequisite, not the flip.
+
+### 2. The MAT pattern in most published sources is out of date
+
+CLAUDE.md: *"Each pattern must be independently verified before seeding, because a
+wrong marking rule silently corrupts every figure for that exam."* This is what
+that rule was for.
+
+Several coaching sites still publish **200 questions, 40 per section, 150
+minutes**, with a fifth section called **"Indian & Global Environment"**. AIMA's
+own site gives **150 questions, 30 per section, 120 minutes**, with that section
+renamed **"Economic & Business Environment"** (the "MAT 2.0" revision). The
+official figures are seeded.
+
+Had the widely-repeated figures been taken on trust, every MAT accuracy figure
+would have carried a denominator 33% too large — and it would have looked
+plausible, because 40 questions per section is what the internet says.
+
+**Consequence for this repo:** `0002_taxonomy.sql` comments
+`counts_toward_score` as `-- false: MAT's IGE, XAT's GK`, and `data-model.md`
+described it as handling "MAT's Indian & Global Environment". That section no
+longer exists under that name. The doc is corrected; the migration comment is
+left alone, because migrations are applied history and rewriting one to look
+prescient is worse than a stale comment.
+
+### 3. MAT's fifth section: a conflict left visible rather than resolved
+
+AIMA's page says all five sections count toward the MAT score. The coaching
+consensus says Economic & Business Environment is scored but **excluded from the
+percentile**, with some colleges still considering it at selection.
+
+Seeded `counts_toward_score = false`, because the admissions-relevant number is
+the percentile. Nothing in the codebase reads that column yet, so this is a
+recorded position rather than live behaviour — and it is recorded in the seed
+script's header as unresolved, not as settled fact.
+
+### 4. Neither exam gets set archetypes — and MAT's case is a genuine loss
+
+ASHA decides set-based vs question-based logging **per section**, by whether the
+section owns `set_archetype` nodes. It is a section-level switch with no mixed
+mode.
+
+**GMAT Data Insights** contains Multi-Source Reasoning, which is set-shaped. But
+DI also holds four standalone types, and the exam is adaptive — you cannot scan
+the section and choose which sets to take. The DILR set-selection engine answers
+*"which sets should I pick?"*, a question the GMAT does not permit.
+
+**MAT Data Analysis & Sufficiency** is the harder call. It genuinely presents 4–5
+DI sets, and MAT has **no sectional clock**, so set selection is a real skill
+there — the signature feature would apply. Archetypes would nonetheless force the
+*entire* section to log by set, leaving its 8–10 standalone Data Sufficiency
+questions with nowhere to go. Question-level logging keeps everything loggable.
+
+So this is a deliberate deferral, not an oversight: MAT set selection needs a
+**mixed-mode section**, which is a schema change, and one that should be designed
+against a real MAT user rather than guessed at now.
+
+### Taxonomy granularity
+
+GMAT 33 nodes, MAT 57 nodes, all `question_type` — no passage domains (a VARC-RC
+construct), no archetypes. Kept coarse on purpose, for the same
+threshold-reachability reason CLAUDE.md gives for archetypes: a taxonomy fine
+enough to be satisfying is a taxonomy whose every leaf renders as a locked card
+forever.
+
+Content notes, verified rather than recalled: Focus Edition Quant is **Problem
+Solving only** — Data Sufficiency moved to Data Insights — and **Geometry was
+removed**, so no Geometry node exists under GMAT Quant. **Sentence Correction was
+removed** from Verbal, so Verbal is Reading Comprehension and Critical Reasoning
+only. Getting either wrong would have produced leaves nothing could ever be
+tagged to, which reads as "you have no weakness here" rather than as an error.
+
+## 2026-08-03 — `(timeLimitMin ?? 40)` was fabricating a time limit
+
+Found while seeding MAT, which is the first exam ASHA has with **no sectional
+clock**: MAT gives 120 minutes across all five sections and lets the student move
+between them freely, so `sections.time_limit_min` is null for every MAT section.
+
+`TimedRunner` computed `const totalSec = (timeLimitMin ?? 40) * 60`. Every CAT
+section is 40 minutes, so the fallback never once showed itself. Against a section
+with no clock it would have:
+
+- displayed a 40-minute countdown the exam does not impose,
+- **auto-stopped the run at 40 minutes**, truncating a measurement,
+- and told the student *"The clock stops itself at 40 minutes, like the real
+  one."* — which would have been false.
+
+Two rules at once: rule 5 (never fabricate data — and this would have fabricated
+it inside the one feature whose entire purpose is `timing_source = 'measured'`)
+and rule 7 (no hardcoded exam constants; 40 belongs in `sections`).
+
+**Fixed:** a section with a limit counts down and stops itself; a section without
+one counts up and stops when the student stops it, the progress bar shows question
+progress instead of a fraction of a nonexistent limit, and nothing is ever
+"urgent" without a deadline to be urgent about.
+
+The derivation moved to `lib/sectionClock.ts` as a pure function with 12 unit
+tests. Not for tidiness: the no-limit branch is **unreachable through the UI while
+MAT is inactive**, so a test is the only thing that can hold it correct until it
+becomes reachable. The CAT path was re-verified live afterwards (40:00 → 39:58,
+bar at 0.083%) to confirm the refactor changed nothing observable.
+
+**The pattern worth remembering:** `?? <plausible default>` on a value that is
+null *because the world is genuinely different there* silently invents a fact. The
+null was carrying information, and the fallback discarded it. The seed script now
+asserts that `time_limit_min IS NULL` and `has_own_timer = true` can never coexist
+in a seeded section, so the two fields cannot drift back into disagreement.
+
 ## 2026-08-03 — The v2 → v3 gate was overridden too, two days later
 
 The v1 → v2 override entry below ends with a prediction: that it "is not a

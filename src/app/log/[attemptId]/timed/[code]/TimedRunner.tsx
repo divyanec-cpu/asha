@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatClock, sectionClock } from "@/lib/sectionClock";
 
 /**
  * In-app timed test mode — v3's headline feature.
@@ -64,7 +65,15 @@ export default function TimedRunner({
   mockTitle: string;
 }) {
   const router = useRouter();
-  const totalSec = (timeLimitMin ?? 40) * 60;
+
+  // Some exams set no sectional clock at all — MAT gives 120 minutes across all
+  // five sections and lets you move between them freely, so `time_limit_min` is
+  // null for every MAT section by design. A section with a clock counts down and
+  // stops itself; a section without one counts up until the student stops it.
+  //
+  // The derivation lives in lib/sectionClock.ts so it can be unit tested; see
+  // that file for what the old `?? 40` fallback would have fabricated here.
+  const hasSectionClock = timeLimitMin !== null;
 
   const [phase, setPhase] = useState<Phase>("ready");
   const [elapsed, setElapsed] = useState(0);
@@ -80,6 +89,9 @@ export default function TimedRunner({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Everything the header and the bar need, derived in one tested place.
+  const clock = sectionClock({ timeLimitMin, elapsedSec: elapsed, questionCount, currentQuestion: current });
 
   /**
    * Wall-clock anchored rather than tick-counted. A setInterval that increments a
@@ -102,10 +114,12 @@ export default function TimedRunner({
 
   // Auto-stop at the limit. A real section ends whether or not you are ready, and
   // letting the clock run past it would record time the exam would not have given.
+  // `clock.expired` is permanently false for an exam with no sectional limit, so
+  // that run simply never gets cut off here.
   useEffect(() => {
-    if (phase === "running" && elapsed >= totalSec) finish();
+    if (phase === "running" && clock.expired) finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elapsed, phase, totalSec]);
+  }, [elapsed, phase, clock.expired]);
 
   // Warn before a reload or close mid-run: the measured times exist only in memory
   // until the section is saved, so a stray refresh would lose the whole run.
@@ -119,7 +133,6 @@ export default function TimedRunner({
     return () => window.removeEventListener("beforeunload", warn);
   }, [phase]);
 
-  const remaining = Math.max(0, totalSec - elapsed);
   const answered = rows.filter((r) => r.status === "attempted").length;
 
   function start() {
@@ -218,7 +231,7 @@ export default function TimedRunner({
         <div className="flex flex-1 flex-col justify-center gap-5">
           <div>
             <div className="tnum font-mono text-[54px] font-semibold leading-none text-paper">
-              {timeLimitMin ?? 40}:00
+              {hasSectionClock ? formatClock(timeLimitMin * 60) : "00:00"}
             </div>
             <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-mute-500">
               {questionCount} QUESTIONS
@@ -241,8 +254,12 @@ export default function TimedRunner({
               Confidence is asked in the moment, genuinely before you check &mdash; which is the only
               point at which that answer means anything.
             </li>
+            {/* Two genuinely different promises, so they are two different
+                sentences rather than one with a fallback number in it. */}
             <li>
-              The clock stops itself at {timeLimitMin ?? 40} minutes, like the real one.
+              {hasSectionClock
+                ? `The clock stops itself at ${timeLimitMin} minutes, like the real one.`
+                : "This exam sets no per-section limit, so the clock counts up and keeps going until you finish the section yourself."}
             </li>
             <li>
               Right and wrong come afterwards, once you have the answer key.
@@ -327,7 +344,7 @@ export default function TimedRunner({
 
   // ── Running ─────────────────────────────────────────────────────────────
   const row = rows[current - 1];
-  const urgent = remaining <= 120;
+  const urgent = clock.urgent;
 
   return (
     <main className="safe-top safe-bottom flex min-h-dvh flex-col bg-ink px-6">
@@ -337,18 +354,21 @@ export default function TimedRunner({
             urgent ? "text-bad-soft" : "text-paper"
           }`}
         >
-          {String(Math.floor(remaining / 60)).padStart(2, "0")}:
-          {String(remaining % 60).padStart(2, "0")}
+          {formatClock(clock.displaySec)}
         </div>
         <div className="font-mono text-[11px] text-mute-500">
           {answered}/{questionCount} DONE
         </div>
       </div>
 
+      {/*
+        Time towards the sectional limit, or question progress when there is no
+        limit for time to be a fraction of. See lib/sectionClock.ts.
+      */}
       <div className="mt-3 h-1 overflow-hidden rounded-sm bg-paper/[0.12]">
         <div
           className={`h-full rounded-sm ${urgent ? "bg-bad" : "bg-brass"}`}
-          style={{ width: `${Math.min(100, (elapsed / totalSec) * 100)}%` }}
+          style={{ width: `${clock.progressPct}%` }}
         />
       </div>
 

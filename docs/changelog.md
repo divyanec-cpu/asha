@@ -2,6 +2,30 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-03 — v3 (2/4): GMAT and MAT reference data, and a fabricated time limit removed
+
+**What changed**
+- **`scripts/seed-gmat-mat.mjs`** — seeds the GMAT and MAT exam rows, marking configs, sections, and a question-type taxonomy for each. 90 taxonomy nodes across 8 sections. Idempotent; asserts its own result against the live database.
+- **`npm run seed:gmat-mat`** — the command.
+- **`src/lib/sectionClock.ts` + tests** — the section-clock derivation, extracted as a pure function so the no-sectional-limit case is covered. 12 new tests; suite is now **101 passing**.
+- **`TimedRunner`** — no longer invents a 40-minute limit for a section that has none.
+
+**Both exams are seeded INACTIVE**, so nothing changes for a student today. The profile form lists them as "soon", exactly as before. CLAUDE.md's v3 entry opens "GMAT and MAT configs. **Seed data only**", and for GMAT there is a specific reason to stop there — see below.
+
+**GMAT's marking numbers are not GMAT scoring.** The Focus Edition is adaptive and scored by item response theory (205–805 total, 60–90 per section); there is no per-question mark. `exam_configs` requires the marking columns, so they are `1 / 0 / 0` — truthful that GMAT has no negative marking, and it makes `marks_earned` a **raw count of correct answers**. That is honest as a count and is *not* a score. Activating GMAT requires auditing every screen for wording that would present that count as a score; until then, inactive.
+
+**The published MAT pattern is mostly out of date.** Many coaching sites still list 200 questions / 40 per section / 150 minutes with a fifth section called "Indian & Global Environment". AIMA's own site gives **150 questions / 30 per section / 120 minutes**, with that section renamed **"Economic & Business Environment"**. The official figures are seeded. Taking the popular figures on trust would have made every MAT accuracy denominator 33% too large, and it would have looked entirely plausible.
+
+**A real bug, found by seeding MAT.** MAT is the first exam with no sectional clock, so `sections.time_limit_min` is null. `TimedRunner` read `(timeLimitMin ?? 40) * 60` — invisible for CAT, where every section is 40 minutes, but against a MAT section it would have shown a 40-minute countdown, **cut the run off at 40 minutes**, and said "the clock stops itself at 40 minutes, like the real one." False, and fabricated inside the one feature whose whole purpose is honest measured timing. Now: a limit counts down and stops itself; no limit counts up and stops when the student does.
+
+**How to test it**
+1. `npm run seed:gmat-mat` — every line should read `ok`, ending with `CAT nodes still intact: 75`. Run it twice; the second run is identical (idempotent).
+2. Open `/profile` on a fresh account. GMAT and MAT appear as unavailable/"soon" chips, not as selectable options. Nothing about CAT changes.
+3. Open a mock with an unlogged question-based section and tap **TIME QA**. It should read `40:00`, count down, and the bar should track *time*. This is the regression check on the clock refactor.
+4. `npm test` — 101 passing. The `sectionClock` suite covers the no-limit case, which cannot be reached through the UI until MAT is activated.
+
+**Not verified end to end, and why:** the count-up clock has no reachable UI path while MAT is inactive, so it is held correct by unit tests only. It needs a live pass at the moment MAT is switched on.
+
 ## 2026-07-30 — Account, export, delete and help (designs 2c/2d)
 
 **What changed**

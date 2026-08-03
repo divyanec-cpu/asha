@@ -75,9 +75,23 @@ The phone versions are the point, not a bonus: a working professional logging a 
 
 There's no ASHA in the App Store, and for now that's deliberate rather than a gap — the home-screen version already does everything the Android app does.
 
+## Timing yourself (added 2026-08-03)
+
+If you haven't taken the mock yet, ASHA can run the clock while you work through your own paper. It doesn't show you questions — it times you. Tap how sure you were on each one and it records your time and the order you actually worked in, then you fill in right and wrong later once you have the answer key.
+
+The difference this makes: timings you *remember* are estimates, and ASHA labels them as such. Timings it *measures* are measured, and it says so. Nothing about the analysis changes — the label does.
+
+Where the exam gives each section its own clock, ASHA counts down and stops itself at the limit, like the real thing. Where an exam gives you one total allowance to spread across sections however you like, there is nothing to count down to, so it counts up and stops when you do.
+
+## GMAT and MAT (groundwork only, 2026-08-03)
+
+ASHA now knows what a GMAT and a MAT paper look like — their sections, question counts, timing and marking rules, and the topics you'd tag against. **You still can't select either one.** They appear on the profile screen as unavailable.
+
+This is deliberate, and the GMAT reason is worth stating: the GMAT is adaptive and scored on a 205–805 scale by an algorithm that weighs question difficulty. There is no such thing as "marks per question" on a GMAT. ASHA can count your correct answers honestly, but a count of correct answers is not a GMAT score, and no screen has yet been checked for wording that might blur the two. Rather than ship something that reads like a score prediction — which ASHA refuses to do for any exam — the groundwork is in place and the exams stay switched off.
+
 ## Deferred, on purpose
 
-In-app timed test mode; GMAT and MAT support; flashcards and spaced revision; OCR of result screenshots; AI anything; XAT, NMAT, SNAP and CMAT. The schema anticipates most of these; the product does not ship them until the gates in CLAUDE.md are met.
+Flashcards and micro-quizzes; OCR of result screenshots; AI anything; XAT, NMAT, SNAP and CMAT. The schema anticipates most of these; the product does not ship them until the gates in CLAUDE.md are met.
 
 ## Current status
 
