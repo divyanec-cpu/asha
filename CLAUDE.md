@@ -140,7 +140,9 @@ The single biggest failure mode across previous builds was scope creep. This is 
 - **Any AI at all.** Unchanged from v1.
 - Everything else on the v1 OUT list.
 
-**Still owed from v1, and not superseded:** a real privacy policy and terms behind the `/account` footer links (which currently render as dead text), a real support address, real-OTP login verification on a physical phone, and a signing keystore for a release APK.
+**Still owed from v1** *(privacy, terms and contact delivered 2026-08-03)*: real-OTP login verification on a physical phone, and a signing keystore for a release APK.
+
+The privacy policy and terms are good-faith plain-language drafts written against the actual schema rather than from a template. **Legal review remains an open pre-launch item**, and the contact address is the builder's personal one until a dedicated support address exists. Both live in `CONTACT_EMAIL` (`src/lib/contact.ts`) so replacing it is a one-line change.
 
 ## Revision queue discipline
 
@@ -217,7 +219,7 @@ Any seeded content — taxonomy nodes, archetype definitions, revision-source su
 - **Not yet built:** persisting computed claims to the `insights` table with `acted_on` carry-forward; the PWA layer and Apple meta tags; the Capacitor Android build; a real privacy policy and support address behind the `/account` footer links.
 - **Dev tooling:** `npm test` (node --test, runs TypeScript natively), `scripts/check-analytics.ts` (runs every analytic against the live database), `scripts/seed-dev-attempts.mjs --phone N [--delete]` (8 deterministic `[SYNTH]` mocks so thresholds can be crossed).
 - Owner: solo builder (coding novice) + Claude Code.
-- Open items carried deliberately: the IP opinion on private mock upload; legal review of privacy policy text and a real support address before any public launch.
+- Open items carried deliberately: the IP opinion on private mock upload; **legal review of the privacy policy and terms text**; a dedicated support address to replace the personal one; real-OTP verification on a physical phone; a signing keystore for a release APK.
 
 ## Amendment log
 

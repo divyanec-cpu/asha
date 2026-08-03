@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/contact";
 import { MIN_INSTANCES, UNITS, type InsightKind } from "@/lib/thresholds";
 
 /**
@@ -230,8 +231,16 @@ export default function HelpPage() {
 
         <div className="mt-auto pb-6 pt-2">
           <div className="rounded-xl border border-brass/45 bg-brass/[0.08] px-4 py-3.5">
-            <div className="text-[13.5px] font-semibold text-ink">Still stuck? Write to us.</div>
-            <div className="mt-0.5 text-[12px] text-[#6B6659]">We answer within a day.</div>
+            {/* An actual mailto. "Write to us" without an address is the same
+                empty gesture as the dead footer links this replaced — and the
+                design's "we answer within a day" is a promise, so it says who
+                is answering rather than implying a support desk. */}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="block">
+              <div className="text-[13.5px] font-semibold text-ink">Still stuck? Write to us.</div>
+              <div className="mt-0.5 text-[12px] text-[#6B6659]">
+                {CONTACT_EMAIL} &mdash; a real person, usually within a day.
+              </div>
+            </a>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AccountActions from "./AccountActions";
 import SignOutButton from "./SignOutButton";
+import { CONTACT_EMAIL } from "@/lib/contact";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
@@ -147,10 +148,23 @@ export default async function AccountPage() {
         <SignOutButton />
       </div>
 
+      {/* Real links. These were <span>s — three words that looked like navigation
+          and did nothing, on the same screen as a working permanent-delete
+          button. For a product whose argument is trustworthiness, that was the
+          worst place in the app to have fake affordances. */}
       <div className="mt-auto flex gap-4 pt-6 font-mono text-[11px] text-[#6B6659]">
-        <span>PRIVACY</span>
-        <span>TERMS</span>
-        <span>CONTACT</span>
+        <Link href="/privacy" className="underline decoration-[#6B6659]/40">
+          PRIVACY
+        </Link>
+        <Link href="/terms" className="underline decoration-[#6B6659]/40">
+          TERMS
+        </Link>
+        <a
+          href={`mailto:${CONTACT_EMAIL}`}
+          className="underline decoration-[#6B6659]/40"
+        >
+          CONTACT
+        </a>
       </div>
     </main>
   );

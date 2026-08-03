@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { devModeAllowed } from "@/lib/devMode";
@@ -225,9 +226,20 @@ export default function AuthFlow() {
             {busy ? "Sending…" : "Send OTP"}
           </button>
 
+          {/* "our terms" now points at terms that exist. Asking someone to agree
+              to an unreachable document is the kind of small dishonesty that
+              costs nothing to fix and everything to be caught doing. */}
           <p className="text-center text-[11.5px] leading-relaxed text-[#6B6659]">
-            By continuing you agree to our terms. Adults only &mdash; ASHA is not for under-18s.
-            You can export or delete everything, any time.
+            By continuing you agree to our{" "}
+            <Link href="/terms" className="underline decoration-[#6B6659]/50">
+              terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline decoration-[#6B6659]/50">
+              privacy policy
+            </Link>
+            . Adults only &mdash; ASHA is not for under-18s. You can export or delete everything,
+            any time.
           </p>
         </div>
       </main>
