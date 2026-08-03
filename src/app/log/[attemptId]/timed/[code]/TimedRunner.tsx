@@ -134,17 +134,25 @@ export default function TimedRunner({
     const spent = Math.max(0, Math.round((now - questionStartedAt.current) / 1000));
     questionStartedAt.current = now;
 
+    // The order index is assigned HERE, outside the state updater, and this is
+    // not a style preference. Mutating a ref inside a setState updater is impure,
+    // and React StrictMode double-invokes updaters in development specifically to
+    // surface that — which it did: orders came out 2, 4, 6 instead of 1, 2, 3.
+    // Production would not double-invoke, so the bug would have hidden in dev
+    // only to look "fixed" once deployed. Assigned before the updater runs, once.
+    const alreadyOrdered = rows[current - 1]?.orderIndex !== null;
+    if (!alreadyOrdered) orderCounter.current += 1;
+    const assignedOrder = alreadyOrdered ? rows[current - 1].orderIndex : orderCounter.current;
+
     setRows((prev) =>
       prev.map((r) => {
         if (r.questionNumber !== current) return r;
         // Accumulate, so revisiting a question adds to its total rather than
         // overwriting — a student who comes back to Q7 spent time on it twice.
-        const alreadyOrdered = r.orderIndex !== null;
-        if (!alreadyOrdered) orderCounter.current += 1;
         return {
           ...r,
           timeSpentSec: r.timeSpentSec + spent,
-          orderIndex: alreadyOrdered ? r.orderIndex : orderCounter.current,
+          orderIndex: assignedOrder,
           status: status === "attempted" ? "attempted" : r.status,
           confidence: confidence ?? r.confidence,
         };
@@ -161,9 +169,19 @@ export default function TimedRunner({
     const now = Date.now();
     const spent = Math.max(0, Math.round((now - questionStartedAt.current) / 1000));
     questionStartedAt.current = now;
+
+    // Time was spent on this one, so it belongs in the attempt order even though
+    // it was never committed — the student demonstrably worked on it. Assigned
+    // outside the updater for the same purity reason as in commit().
+    const needsOrder = spent > 0 && rows[current - 1]?.orderIndex === null;
+    if (needsOrder) orderCounter.current += 1;
+    const finalOrder = needsOrder ? orderCounter.current : (rows[current - 1]?.orderIndex ?? null);
+
     setRows((prev) =>
       prev.map((r) =>
-        r.questionNumber === current ? { ...r, timeSpentSec: r.timeSpentSec + spent } : r,
+        r.questionNumber === current
+          ? { ...r, timeSpentSec: r.timeSpentSec + spent, orderIndex: finalOrder }
+          : r,
       ),
     );
     setPhase("done");
@@ -213,14 +231,15 @@ export default function TimedRunner({
           </p>
 
           <ul className="flex flex-col gap-2 text-[12.5px] leading-relaxed text-mute-300">
+            {/* Built as one interpolated string: a `</strong> word` boundary
+                silently ate its space here and rendered "Skipas". Same bug as
+                the TITA line in QuestionSheet. */}
             <li>
-              Tap <strong className="text-paper">Answered</strong> or{" "}
-              <strong className="text-paper">Skip</strong> as you finish each one. That&rsquo;s what
-              records your time.
+              {"For each question, tap how sure you were — or tap Skip it. Either one records your time and moves on."}
             </li>
             <li>
-              How sure you feel is asked in the moment &mdash; genuinely before you check, which is
-              the only time that answer means anything.
+              Confidence is asked in the moment, genuinely before you check &mdash; which is the only
+              point at which that answer means anything.
             </li>
             <li>
               The clock stops itself at {timeLimitMin ?? 40} minutes, like the real one.
@@ -262,7 +281,17 @@ export default function TimedRunner({
 
         <div className="flex flex-1 flex-col justify-center gap-5">
           <div className="flex gap-3">
-            <Stat value={`${Math.floor(measured / 60)}m`} label="on the clock" />
+            {/* Seconds below a minute: flooring to minutes reported a 40-second
+                run as "0m", which reads as "nothing was recorded" when in fact
+                the timings are there. */}
+            <Stat
+              value={
+                measured < 60
+                  ? `${measured}s`
+                  : `${Math.floor(measured / 60)}m ${measured % 60 === 0 ? "" : `${measured % 60}s`}`.trim()
+              }
+              label="on the clock"
+            />
             <Stat value={String(answered)} label={`of ${questionCount} answered`} />
           </div>
 
