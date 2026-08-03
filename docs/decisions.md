@@ -2,6 +2,46 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-03 — The v2 → v3 gate was overridden too, two days later
+
+The v1 → v2 override entry below ends with a prediction: that it "is not a
+precedent for overriding that one". It took two days to be wrong.
+
+**The gate:** *">40% of active users log ≥3 mocks and self-report that an insight
+changed their set-selection behaviour."*
+
+**The state:** 0 users with ≥3 mocks. 1 real mock in the database. No
+self-reported behaviour change. This gate is a *percentage of active users*, and
+there are no active users — so it was not merely unmet, it was **unmeasurable**.
+There is no denominator.
+
+**Both gates are now spent.** CLAUDE.md contains no remaining mechanism that can
+refuse an expansion of scope. That is worth stating flatly because the gates were
+the project's answer to a specific, named, three-times-repeated failure — its
+opening decision entry says "'Don't scope-creep' is not an instruction anyone can
+follow", which is precisely why the checks were written as numbers instead of
+intentions. The numbers have now been set aside twice in three days, both times
+after being shown.
+
+**What is actually true about the current state**, recorded so it is not
+reconstructed later from the commit log: the app is live and works, has one real
+mock of data logged by the builder while testing, an unsigned APK because the
+keystore does not yet exist, real-OTP login never exercised on a phone, and legal
+review of the policy text outstanding. Four version tiers of features now sit on
+top of that.
+
+**Why the first item was still worth building.** Of the four remaining, in-app
+timed test mode is the only one that adds capability without adding a dependency
+— no AI, no content commissioning, no recurring cost — and it fixes the weakest
+data in the product. Every timing figure today is the student's recollection
+entered in buckets; the timer makes them measurements. `timing_source` and
+`entry_mode` were both put in the schema on day one for exactly this, and the
+analytics do not change at all, only the provenance label. That is the design
+paying off as intended.
+
+**The ordering was chosen on that basis** — capability-per-commitment, cheapest
+first — rather than by version number.
+
 ## 2026-08-01 — The v1 → v2 gate was overridden while unmet
 
 Recording this plainly, because the alternative — editing the gate to match

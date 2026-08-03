@@ -85,6 +85,9 @@ export default async function AttemptPage({
 
   const allComplete = rows.length > 0 && rows.every((r) => r.complete);
 
+  // Sections a timed run makes sense for: question-based, and not yet logged.
+  const timeable = rows.filter((r) => !r.isSetBased && r.accounted === 0);
+
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
       <div className="safe-top bg-ink px-5 pb-4">
@@ -134,6 +137,36 @@ export default async function AttemptPage({
             </div>
           </Link>
         ))}
+
+        {/*
+          Timed runs, offered only for question-based sections and only before
+          anything is logged for them. A timed run rewrites the section's question
+          rows, so offering it on a section already logged would invite someone to
+          overwrite work they'd done — the route preserves correctness, but the
+          safer default is not to suggest it at all.
+        */}
+        {timeable.length > 0 && (
+          <div className="mt-1 rounded-[13px] border border-brass/40 bg-brass/[0.06] px-4 py-3.5">
+            <div className="font-mono text-[10px] font-semibold tracking-[0.14em] text-brass">
+              OR TIME YOURSELF
+            </div>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#4A463D] text-pretty">
+              Haven&rsquo;t taken it yet? ASHA can run the clock while you work through the paper,
+              so your timings are measured instead of remembered.
+            </p>
+            <div className="mt-2.5 flex gap-2">
+              {timeable.map((r) => (
+                <Link
+                  key={r.code}
+                  href={`/log/${attempt.id}/timed/${r.code}`}
+                  className="flex-1 rounded-[10px] bg-ink py-2.5 text-center font-mono text-[11px] font-semibold tracking-[0.06em] text-paper"
+                >
+                  TIME {r.code}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-auto pb-6 pt-3">
           <CompleteButton

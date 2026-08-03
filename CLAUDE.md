@@ -127,7 +127,23 @@ The single biggest failure mode across previous builds was scope creep. This is 
 
 > **The v1 → v2 gate was OVERRIDDEN on 2026-08-01 by explicit builder decision, unmet.** At the time of override: **1 real mock logged** (by the builder, while testing) against a requirement of 5, and the 4 `acted_on` insights had been set by hand while verifying carry-forward. On the metric that matters the count was effectively zero.
 >
-> This is recorded rather than quietly erased because the gate is the mechanism that was supposed to stop a fourth build dying of scope creep, and this is the first time it was tested against a real request. **The v2 → v3 gate still stands, and overriding this one is not a precedent for overriding that one.** Reasoning in `docs/decisions.md`.
+> This is recorded rather than quietly erased because the gate is the mechanism that was supposed to stop a fourth build dying of scope creep, and this is the first time it was tested against a real request. Reasoning in `docs/decisions.md`.
+>
+> **The v2 → v3 gate was then ALSO overridden, on 2026-08-03, two days later.** At the time: **0 users with ≥3 mocks**, 1 real mock in the database, no behaviour change recorded — the gate was not merely unmet but unmeasurable, since it is a percentage of active users and there were none. When the v1 → v2 override was written it said in this same paragraph that it "is not a precedent for overriding that one". It became one within two days. That sentence is left in the history above rather than edited out, because a constitution that quietly rewrites its own predictions is worth nothing.
+>
+> **Both gates are now spent. There is no remaining mechanism in this document that can stop scope from expanding** — only the builder's judgement, which is what the gates existed to supplement.
+
+## Scope boundary — v3 (opened 2026-08-03)
+
+**IN v3, in the order being built:**
+- **In-app timed test mode.** ASHA runs the section clock while the student works through a mock they already own, capturing per-question time and attempt order as they happen. This is what makes `timing_source = 'measured'` real, and it also finally populates `question_attempts.order_index`, which no earlier flow captured. **No analytic changes** — that is the point of the provenance column.
+- **GMAT and MAT configs.** Seed data only: exam rows, `exam_configs` marking per pattern, sections, and a taxonomy per exam. Each pattern must be independently verified before seeding, because a wrong marking rule silently corrupts every figure for that exam.
+
+**Also now opened, from v2's remainder:**
+- **OCR of result screenshots** — introduces runtime AI and a recurring bill. Requires server-side only, per-user caps, success-only logging and a graceful non-AI fallback (the Dhruva pattern).
+- **Micro-quizzes** — requires original hand-written or agent-drafted-and-hand-verified content. Never reproductions of real exam items; the copyright rule is unchanged and unchangeable.
+
+**Still OUT:** XAT / NMAT / SNAP / CMAT. File upload of mock PDFs (blocked on the IP opinion). Percentile prediction, in any form, ever. Native iOS app and App Store submission. A shared question bank — this one is not a scope decision and cannot be opened.
 
 ## Scope boundary — v2 (opened 2026-08-01)
 

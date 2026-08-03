@@ -151,3 +151,34 @@ which is the payoff for settling it early.
 | Demotion | a `conceptual` error in that type on a mock not yet applied → box 1, due tomorrow | — |
 | Topics shown today | `due_date <= today`, most overdue first, capped at 5 | — |
 | Deferred count | overdue topics beyond the cap, reported rather than truncated | — |
+
+## Timing provenance moved to the section (`0008`, 2026-08-03)
+
+`section_attempts.timing_source` (`measured` / `estimated` / `absent`, default
+`estimated`), and `mock_attempts.timing_source` gains `mixed`.
+
+**Why the attempt-level column was not enough.** In-app timed mode makes
+`measured` real, and a student will realistically time one section and log the
+others from recall — timing a 40-minute DILR section is a very different
+commitment from timing all three. A single attempt-level column would have to
+record a part-timed attempt as either `measured` or `estimated`, and both are
+false. CLAUDE.md forbids averaging across provenances "without saying so", and a
+column that cannot express the difference makes that unenforceable.
+
+**The rollup is deliberately conservative** (`lib/analytics/provenance.ts`):
+anything short of unanimity is `mixed`. Calling an attempt `measured` because most
+of it was timed is exactly the silent averaging the rule prohibits — a reader
+would take `measured` to mean all of it. `absent` sections are ignored rather than
+counted as disagreement, since a section with no timing says nothing about the
+provenance of the ones that have it.
+
+`canAggregateTiming()` returns false for `mixed`, so a figure drawn half from a
+stopwatch and half from memory is withheld rather than presented as one number.
+
+### `order_index` is no longer reserved
+
+No schema change — the column has existed since `0003`. It was documented as
+"reserved in practice" because neither post-hoc entry flow could know the order a
+student worked in. Timed mode observes it directly, so it is now populated for
+timed sections and stays null for post-hoc ones, where paper order is all that is
+knowable. It is never inferred.
