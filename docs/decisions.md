@@ -2,6 +2,37 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-04 — VARC, and being honest that two kinds of answer key are not equally sound
+
+Adding VARC needed code before content: `question_stimuli` had existed since `0009`, but the run page never selected or rendered it, so a passage-based question was unanswerable.
+
+### The verification asymmetry, stated rather than hidden
+
+This is the first ASHA content whose correctness cannot be computed, and the builder has said they cannot check CAT content themselves. So the difference is recorded rather than smoothed over:
+
+| | Guarantee |
+|---|---|
+| **Verbal ability** (jumble, odd-one-out, insertion) | **Computed.** The paragraph is written in its coherent order and a display permutation declared; the seed *derives* the key and asserts that applying it rebuilds the paragraph exactly. No key to mistype. As sound as any QA key. |
+| **Reading comprehension** | **Judgement.** No computation can establish that an inference is the best-supported reading. |
+
+Claiming otherwise would be precisely the overclaim ASHA exists not to make.
+
+**What is enforced for RC instead:** every question carries a `support` string that must appear **verbatim** in its passage, and the seed refuses to write if it does not. This does not prove the key is right, but it makes the key *auditable by a non-expert* — "the answer is B because of this sentence" can be held against the text by anyone who can read. And it catches the classic RC authoring failure, which is keying an answer to something the passage does not actually say.
+
+### Passages are original, and that is what makes them shareable at all
+
+Not excerpts, adaptations or paraphrases. A public-domain excerpt would raise an edition-and-translation question; a contemporary excerpt would simply be infringement. Writing them originally is the only route by which a passage can sit in a shared table under hard product rule 2.
+
+A side benefit: public-domain prose is pre-1965 by necessity and reads nothing like CAT's contemporary academic register, so original passages are also the *better* pedagogic choice, not merely the safe one.
+
+### Fold state is keyed on the passage, not the question
+
+A ~340-word passage fills a 360px viewport. Keying the fold on `stimulus_id` means folding it once keeps it folded across all four of its questions; keying it on the question would spring it open on every navigation. The panel also scrolls inside its own box rather than pushing the options below the fold — otherwise the student scrolls past the whole passage on every question, and the *measured* timings would then be measuring the interface rather than the reading, which would quietly corrupt the one thing the timed runner exists to get right.
+
+### One seed script, one content source
+
+VARC owns `ASHA.ORIGINAL.VARC.V1`, QA owns `ASHA.ORIGINAL.V1`, and each rebuilds only its own pool. Both scripts delete-then-insert, so a shared source would mean re-running the QA seed silently destroyed every VARC item. Verified by re-running QA and confirming VARC survived intact.
+
 ## 2026-08-04 — Three difficulty tiers, decided as the specialist
 
 The builder said plainly that they do not know how CAT works and could not review the questions, and asked me to finalise. Recording the reasoning, since nobody else was in a position to check it.

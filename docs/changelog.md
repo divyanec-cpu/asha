@@ -2,6 +2,24 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-04 — VARC: passages on screen, and 16 original VARC questions
+
+**What changed**
+- **The runner can now display a shared passage.** `question_stimuli` existed in the schema since `0009` but the run page neither selected nor rendered it, so VARC was impossible. The passage sits above the question in its own scrolling panel, with a fold control.
+- **`scripts/seed-practice-varc.mjs`** and **`npm run seed:varc`** — three original passages, 12 RC questions covering all 7 RC types, and 4 verbal-ability questions covering all 4 VA types. One paper: **VARC 1**, 16 questions, 27 minutes.
+
+**The fold state is keyed on the passage, not the question.** A passage runs ~340 words with four questions hanging off it, and on a 360px screen it fills the viewport. Folding it once keeps it folded across all four of its questions instead of springing open on every navigation — and the panel scrolls inside a `max-h-[42vh]` box rather than pushing the options off-screen, because having to scroll past the whole passage on every question would make the measured timings say more about the interface than about the reading.
+
+**Answer-key reliability is NOT uniform here, and the docs say so.** Verbal-ability keys are *computed from the construction*: a para jumble is built by writing a coherent paragraph and declaring a display permutation, so the seed derives the answer and there is no key to mistype — it then asserts that applying the computed key rebuilds the paragraph exactly. Odd-one-out and sentence-insertion work the same way.
+
+Reading-comprehension keys rest on **judgement**, and no computation can confirm an inference is the best-supported one. What is enforced instead: every RC question carries a `support` string that must appear **verbatim** in its passage, and the seed refuses to write otherwise. That makes each key checkable by anyone who can read, without knowing CAT — the claim "the answer is B on the strength of this sentence" can be held against the text. It catches the classic authoring error of keying an answer to something the passage does not actually say.
+
+**One seed script, one content source.** VARC owns `ASHA.ORIGINAL.VARC.V1`; QA owns `ASHA.ORIGINAL.V1`. Each rebuilds only its own pool. Without that split, re-running the QA seed would silently delete every VARC item — verified by re-running it and confirming VARC's 16 items and 3 passages survived.
+
+**How to test it**
+1. `npm run seed:varc` — passages word-counted, every RC support located verbatim, VA keys computed, all 7 RC and 4 VA types confirmed covered.
+2. `/practice` → **VARC 1** → start. The passage appears above question 1 with a HIDE control. Fold it, go to question 2 — still folded. Go to question 5 (a different passage) — expanded again. Question 13 is verbal ability and has no passage panel.
+
 ## 2026-08-04 — Practice content: 43 questions across three tiers
 
 **What changed**

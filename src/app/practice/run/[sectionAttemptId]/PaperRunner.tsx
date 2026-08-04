@@ -35,6 +35,10 @@ type Question = {
   stem: string;
   responseFormat: "mcq" | "tita";
   options: string[];
+  /** Shared passage or set data. Null for a standalone question. */
+  stimulusId: string | null;
+  stimulusTitle: string | null;
+  stimulusBody: string | null;
 };
 
 type Answer = {
@@ -74,6 +78,15 @@ export default function PaperRunner({
   const [elapsed, setElapsed] = useState(0);
   const [current, setCurrent] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Passages the student has folded away, keyed by stimulus id — NOT by question.
+   *
+   * A reading passage runs several hundred words with four questions hanging off it,
+   * and on a 360px screen it fills the viewport. Keying on the stimulus means
+   * folding it once keeps it folded across all four of its questions, rather than
+   * springing open again every time the student moves to the next one.
+   */
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [answers, setAnswers] = useState<Answer[]>(() =>
     questions.map(() => ({
       selectedOption: null,
@@ -373,6 +386,49 @@ export default function PaperRunner({
             {q.responseFormat === "tita" ? "TYPE THE ANSWER" : "ONE CORRECT OPTION"}
           </span>
         </div>
+
+        {/*
+          The shared passage, above the question that asks about it. Scrolls inside
+          its own box rather than pushing the options off the screen — on a 360px
+          viewport a 400-word passage is several screens tall, and having to scroll
+          past all of it to reach the answers on every question would make the
+          measured timings say more about the interface than about the reading.
+        */}
+        {q.stimulusBody !== null && q.stimulusId !== null && (
+          <div className="mt-3 rounded-[12px] border border-paper/[0.16] bg-paper/[0.05]">
+            <button
+              type="button"
+              onClick={() =>
+                setCollapsed((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(q.stimulusId!)) next.delete(q.stimulusId!);
+                  else next.add(q.stimulusId!);
+                  return next;
+                })
+              }
+              className="flex w-full items-center justify-between px-3.5 py-2.5"
+            >
+              <span className="font-mono text-[10px] font-semibold tracking-[0.12em] text-brass">
+                {q.stimulusTitle ? q.stimulusTitle.toUpperCase() : "THE PASSAGE"}
+              </span>
+              <span className="ml-2 font-mono text-[10px] font-semibold tracking-[0.06em] text-mute-500">
+                {collapsed.has(q.stimulusId) ? "SHOW" : "HIDE"}
+              </span>
+            </button>
+            {!collapsed.has(q.stimulusId) && (
+              <div className="max-h-[42vh] overflow-y-auto border-t border-paper/[0.12] px-3.5 py-3">
+                {q.stimulusBody.split("\n\n").map((para, i) => (
+                  <p
+                    key={i}
+                    className="mb-2.5 text-[13.5px] leading-relaxed text-paper/90 text-pretty last:mb-0"
+                  >
+                    {para}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <p className="mt-3 text-[15px] leading-relaxed text-paper text-pretty">{q.stem}</p>
 
