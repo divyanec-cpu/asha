@@ -2,6 +2,74 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-04 — Practice content: the rule that changed, and the three that did not
+
+The builder asked for mock tests in the app, initially for one person (their niece), with a longer-term plan to **license content from coaching centres**.
+
+### The rule was narrowed, not deleted
+
+Hard product rule 2 read *"ASHA is not a mock bank. It never ships a shared library of CAT/GMAT/MAT questions."* It now reads *"never an **unlicensed shared** bank"*, permitting `original`, `licensed` and `private` content with per-item provenance.
+
+**What did not change:** no real exam item enters this codebase without a licence. Not for one user, not for testing, not "just to try it".
+
+### "Aren't these available online?" — the question that decided the build order
+
+They are, and it does not help:
+
+- **The IIMs publish no CAT past papers at all.** What circulates as "CAT 2023 Slot 2" is a *reconstruction* assembled by a coaching institute from student recall. That reconstruction is IMS's or TIME's or Career Launcher's own copyrighted work — so copying it takes from precisely the people the plan is to partner with.
+- **SimCAT and AIMCAT** are commercial products whose terms forbid reproduction outright.
+- **Public readability is not a licence.** Copyright is automatic and needs no notice.
+
+**The commercial argument turned out stronger than the legal one.** An institute doing due diligence on a licensing deal will ask what content ASHA already holds. If the answer is "yours, without a licence", that is not a partnership conversation. The clean position is an asset, and it is worth more than a shortcut to content. Hence: build the engine now with original content, and let licensed content slot in as a configuration change.
+
+### `content_sources` exists so provenance cannot be forgotten
+
+Every stimulus, item and paper carries a source; the source carries its licence terms. There is **no way to insert a question anonymously**, and a `licensed` row cannot exist without a named owner (a CHECK constraint, not a convention).
+
+`private` — a student's own material — is defined and **read-policied but deliberately not writable**. CLAUDE.md still flags that case as needing an IP opinion. The read policies already exclude other users' private rows, so enabling it later adds an insert policy rather than rewriting the security model. Retrofitting that read path is the version of this change that leaks one student's material to another.
+
+### The answer key never reaches the browser
+
+The run page selects stems and options only — no `correct_option`, `correct_answer` or `solution` — and grading happens server-side in `/api/practice/[id]/submit`, which **ignores any verdict in the request** and derives it from the stored key and the stored marking rules. Verified by fetching the page's actual payload and searching for the key fields and three distinctive solution strings: all absent, with a question stem present as a control so the search was known to be looking at the right document.
+
+### Answer keys are recomputed, not trusted
+
+Each seeded question carries a `verify()` deriving its answer from first principles — exact modular exponentiation via BigInt, brute-force permutation, full enumeration of 36 dice outcomes — and the seed refuses to write if the declared key disagrees. It also refuses if a *second* option equals the correct answer.
+
+Not ceremony. A wrong key is invisible, marks a correct student wrong, and then feeds that error into their error-cause tags and confidence calibration — so they would be told they had a concept gap on a question they got right. Three answers came back with floating-point drift (`4.999999999999982` for the 5% answer), which is why the check uses a tolerance rather than `===`.
+
+### Practice runs are kept OUT of the cross-mock analytics
+
+Found by testing rather than by design: `loadAnalyticsData` pulled every complete attempt, so a 14-question practice set scoring **5** landed in the same series as mocks scoring 118, and "+8.7 vs your last three" was about to be computed across both. It would also have inflated the mock count driving the global confidence chip — telling a student their readings were firmer because they did a short practice set.
+
+Practice attempts are now excluded from the analytics loader, the mock log and the mock count, and listed on `/practice` instead so results stay reachable. The attempt page shows only the sections the paper covers, against the paper's own question count, and labels the score **"MARKED BY ASHA"** rather than "REPORTED" — the student did not report it.
+
+**Left open deliberately:** whether to blend practice *question-level* data (measured timings, accuracy by type, confidence) into the per-type analytics. There is a real trade-off — ASHA's own questions are not calibrated against a mock provider's — and it is the builder's call, not a default chosen in a loader. All the data is stored either way.
+
+### A partial paper declares its own clock
+
+`practice_papers.time_limit_min`, with a CHECK that only a full mock may leave it null. Handing a 14-question set CAT's full 40-minute QA clock would train precisely the wrong pacing. Same family of error as the `?? 40` fabrication below: inheriting a number from a context it does not belong to.
+
+## 2026-08-04 — The StrictMode order_index bug, written twice
+
+`order_index` came out **2, 4, 6 … 28** instead of 1–14 on the first real practice run.
+
+Identical to the bug fixed in `TimedRunner` on 2026-08-03, reintroduced in `PaperRunner` **directly beneath a comment warning about it**:
+
+```js
+setAnswers((prev) => {
+  if (prev[i].orderIndex !== null) return prev;
+  counter.current += 1;          // <-- mutation inside the updater
+  return prev.map(...counter.current...);
+});
+```
+
+React StrictMode double-invokes state updaters in development precisely to surface impure ones. On both invocations `prev` is the pre-update state, so the `!== null` guard passes twice and the counter advances twice.
+
+A nasty class of bug: it misbehaves only in development, so it looks "fixed" in production while remaining timing-dependent there; and the damage is silent, because `order_index` feeds pacing analysis, where a doubled sequence is not obviously wrong, just wrong.
+
+**Having written it twice, a comment is evidently not sufficient.** The decision now lives in `lib/workingOrder.ts` as a pure function with 6 tests, one of which simulates the double invocation directly. The caller mutates outside the updater. Verified live afterwards: visiting Q1 → Q5 → Q3 recorded orders 1, 2, 3, and revisiting Q1 did **not** renumber it.
+
 ## 2026-08-03 — GMAT and MAT: what was seeded, and the four things that are not what they look like
 
 v3 scope item 2. Reference data only — no analytics changed, and no analytic

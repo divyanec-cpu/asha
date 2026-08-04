@@ -31,16 +31,39 @@ export default async function AttemptPage({
 
   const { data: attempt } = await supabase
     .from("mock_attempts")
-    .select("id, exam_id, taken_on, total_score, is_complete, mock_sources(title)")
+    .select("id, exam_id, taken_on, total_score, is_complete, paper_id, mock_sources(title), practice_papers(title, is_full_mock)")
     .eq("id", attemptId)
     .maybeSingle();
   if (!attempt) redirect("/log");
 
-  const { data: sections } = await supabase
+  // A practice paper covers only the sections it actually contains. Listing the
+  // exam's full set would show a QA-only practice set as a three-section mock with
+  // VARC and DILR "NOT STARTED", which reads as an abandoned mock rather than a
+  // finished practice run.
+  const isPractice = attempt.paper_id !== null;
+  let paperSectionIds: string[] | null = null;
+  // How many questions the PAPER holds per section — not how many the exam's real
+  // section has. A 14-question practice set shown as "3 / 22 Q" would be reporting
+  // against a denominator that does not exist for this paper.
+  const paperCounts = new Map<string, number>();
+  if (isPractice) {
+    const { data: paperItems } = await supabase
+      .from("paper_items")
+      .select("section_id")
+      .eq("paper_id", attempt.paper_id);
+    for (const row of paperItems ?? []) {
+      const id = row.section_id as string;
+      paperCounts.set(id, (paperCounts.get(id) ?? 0) + 1);
+    }
+    paperSectionIds = [...paperCounts.keys()];
+  }
+
+  let sectionQuery = supabase
     .from("sections")
     .select("id, code, name, ordinal, question_count")
-    .eq("exam_id", attempt.exam_id)
-    .order("ordinal");
+    .eq("exam_id", attempt.exam_id);
+  if (paperSectionIds !== null) sectionQuery = sectionQuery.in("id", paperSectionIds);
+  const { data: sections } = await sectionQuery.order("ordinal");
 
   const { data: sectionAttempts } = await supabase
     .from("section_attempts")
@@ -72,13 +95,14 @@ export default async function AttemptPage({
           .filter((r) => r.section_attempt_id === sa?.id)
           .reduce((sum, r) => sum + r.num_questions, 0)
       : (questions ?? []).filter((r) => r.section_attempt_id === sa?.id).length;
+    const questionCount = isPractice ? (paperCounts.get(s.id) ?? null) : s.question_count;
     return {
       code: s.code,
       name: s.name,
-      questionCount: s.question_count,
+      questionCount,
       reportedScore: sa?.score === null || sa?.score === undefined ? null : Number(sa.score),
       accounted,
-      complete: s.question_count !== null && accounted === s.question_count,
+      complete: questionCount !== null && accounted === questionCount,
       isSetBased,
     };
   });
@@ -86,23 +110,33 @@ export default async function AttemptPage({
   const allComplete = rows.length > 0 && rows.every((r) => r.complete);
 
   // Sections a timed run makes sense for: question-based, and not yet logged.
-  const timeable = rows.filter((r) => !r.isSetBased && r.accounted === 0);
+  // Never for a practice attempt — that was already run under ASHA's clock and
+  // graded, so offering to "time yourself" on it makes no sense and the route would
+  // overwrite the graded rows.
+  const timeable = isPractice ? [] : rows.filter((r) => !r.isSetBased && r.accounted === 0);
 
   return (
     <main className="flex min-h-dvh flex-col bg-paper">
       <div className="safe-top bg-ink px-5 pb-4">
         <div className="flex items-center justify-between">
           <span className="text-[15px] font-semibold text-paper">
-            {one(attempt.mock_sources)?.title ?? "This mock"}
+            {one(attempt.practice_papers)?.title ??
+              one(attempt.mock_sources)?.title ??
+              "This mock"}
           </span>
-          <Link href="/log" className="font-mono text-xs font-medium text-brass">
-            ALL MOCKS
+          <Link
+            href={isPractice ? "/practice" : "/log"}
+            className="font-mono text-xs font-medium text-brass"
+          >
+            {isPractice ? "PRACTICE" : "ALL MOCKS"}
           </Link>
         </div>
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute-300 text-pretty">
-          {attempt.is_complete
-            ? "Logged. You can still come back and change anything."
-            : "Three sections. Do them in any order, and stop whenever you like."}
+          {isPractice
+            ? "Marked by ASHA against its own answer key, on measured timings. Kept out of your cross-mock trend — a practice set is not a mock."
+            : attempt.is_complete
+              ? "Logged. You can still come back and change anything."
+              : "Three sections. Do them in any order, and stop whenever you like."}
         </p>
       </div>
 
@@ -133,7 +167,17 @@ export default async function AttemptPage({
                 {r.questionCount !== null && ` / ${r.questionCount}`} Q
               </span>
               <span>{r.isSetBased ? "BY SET" : "BY QUESTION"}</span>
-              {r.reportedScore !== null && <span className="tnum">{r.reportedScore} REPORTED</span>}
+              {/*
+                "REPORTED" is only true for a logged mock, where the student typed
+                in what their mock platform told them. A practice score was computed
+                here from ASHA's own answer key, so calling it reported would
+                misattribute the number.
+              */}
+              {r.reportedScore !== null && (
+                <span className="tnum">
+                  {r.reportedScore} {isPractice ? "MARKED BY ASHA" : "REPORTED"}
+                </span>
+              )}
             </div>
           </Link>
         ))}
@@ -168,12 +212,26 @@ export default async function AttemptPage({
           </div>
         )}
 
+        {/*
+          A practice attempt is complete the moment it is graded — there is nothing
+          for the student to mark done, and the "some sections aren't fully logged"
+          warning would be nonsense against a single-section paper.
+        */}
         <div className="mt-auto pb-6 pt-3">
-          <CompleteButton
-            attemptId={attempt.id}
-            allComplete={allComplete}
-            isComplete={attempt.is_complete}
-          />
+          {isPractice ? (
+            <Link
+              href="/practice"
+              className="block rounded-[13px] bg-brass py-4 text-center text-[15px] font-semibold text-white"
+            >
+              Back to practice
+            </Link>
+          ) : (
+            <CompleteButton
+              attemptId={attempt.id}
+              allComplete={allComplete}
+              isComplete={attempt.is_complete}
+            />
+          )}
         </div>
       </div>
     </main>

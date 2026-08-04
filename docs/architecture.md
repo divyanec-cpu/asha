@@ -76,6 +76,9 @@ asha/
     seed-gmat-mat.mjs           GMAT (33 nodes) + MAT (57), both seeded active=false;
                                 asserts marking configs and section flags field by
                                 field, and that CAT's 75 nodes are untouched
+    seed-practice-qa.mjs        14 ORIGINAL QA questions + one practice paper.
+                                Recomputes every answer key from first principles
+                                and refuses to write if the declared key disagrees
   .env.local.example            environment template; .env.local is gitignored
   src/
     app/
@@ -93,8 +96,18 @@ asha/
                                 one screen, and "what it won't do" belongs beside the
                                 controls that prove the data is yours)
       help/                     design 2c — short answers; "why is this locked?"
+      practice/                 QUESTIONS ASHA HOLDS ITSELF — timed and marked here,
+                                as opposed to /log, which replays a mock taken
+                                elsewhere. Lists papers with attribution + past runs
+        run/[sectionAttemptId]/ the runner. Receives stems and options ONLY — the
+                                answer key is never sent to the browser
       api/account/delete/       the only route needing the admin client, because
                                 removing an auth identity requires it
+      api/practice/start/       creates the attempt (entry_mode = in_app_test,
+                                timing_source = measured from the first tick)
+      api/practice/[id]/submit/ GRADES SERVER-SIDE against the stored key and the
+                                stored exam_configs. Ignores any verdict in the
+                                request; refuses a second submit
     lib/
       analytics/                pure functions over attempt rows — no DB, no React
       thresholds.ts             evidence thresholds, single source of truth
@@ -103,6 +116,12 @@ asha/
                                 exams differ on whether a section HAS a clock at all
                                 (MAT does not), and the fallback that papered over
                                 that was inventing a 40-minute limit
+      grading.ts                marks a response against an item's key. Pure, and
+                                takes the marking scheme as an ARGUMENT — it has no
+                                idea which exam it is grading (rule 7)
+      workingOrder.ts           which order_index a question gets. A pure function
+                                because the same StrictMode impure-updater bug was
+                                written twice; a warning comment was not enough
       supabase/                 browser + server clients
   capacitor.config.ts           remote-URL shell config — see above
   www/                          never-served placeholder Capacitor requires

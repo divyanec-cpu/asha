@@ -2,6 +2,35 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-04 — Practice papers: ASHA can put questions on screen (Phase 1)
+
+**What changed**
+- **Migration `0009`** — `content_sources`, `question_stimuli`, `question_items`, `practice_papers`, `paper_items`, plus `mock_attempts.paper_id`, `question_attempts.question_item_id / selected_option / response_text`, and a third `entry_mode` value `in_app_test`.
+- **`/practice`** — lists available papers with attribution, and your past runs.
+- **`/practice/run/[sectionAttemptId]`** — the timed runner: questions on screen, a question navigator, MCQ and type-in answers, optional one-tap confidence.
+- **`/api/practice/start`** and **`/api/practice/[id]/submit`** — create the attempt, then grade it.
+- **`lib/grading.ts`** (20 tests) and **`lib/workingOrder.ts`** (6 tests). Suite now **127 passing**.
+- **`npm run seed:practice`** — 14 original QA questions.
+
+**This is the amendment to a hard product rule, so read this bit.** CLAUDE.md's rule 2 was "ASHA is not a mock bank". It is now "never an **unlicensed shared** bank". ASHA may serve `original` content (written for ASHA), `licensed` content (attributed, with an expiry), or `private` content (a student's own — reserved and not writable, pending the IP opinion). **No real exam item enters the codebase without a licence, ever.** `content_sources` enforces this structurally: a question cannot be inserted without a source, and a licensed source cannot exist without a named owner.
+
+**The answer key never reaches the browser.** The run page selects stems and options only. Grading happens server-side against rows read there, and the submit route ignores any verdict in the request.
+
+**Every seeded answer key is recomputed before writing** — modular exponentiation, brute-force permutation, full enumeration of the dice sample space — and the seed refuses if the declared key disagrees, or if a second option also equals the right answer.
+
+**Practice runs are kept out of the cross-mock analytics.** A 14-question set scores out of 42; a CAT mock out of 204. Left in, a practice score of 5 would have sat beside 118 in the trend and inflated the mock count behind the confidence chip. They now appear on `/practice` instead of the mock log, with the score labelled "MARKED BY ASHA" rather than "REPORTED".
+
+**A bug found and fixed:** `order_index` recorded 2, 4, 6 … 28 instead of 1–14 — the same React StrictMode impure-updater bug fixed in `TimedRunner` the day before, reintroduced here beneath the comment warning about it. Now a tested pure function.
+
+**How to test it**
+1. `npm run seed:practice` — 14 keys verified, gapless numbering, source kind `original`.
+2. LOG tab → **PRACTISE IN ASHA** → start the paper. Answer a few questions out of order, then submit.
+3. You land on the result: only the QA section, `14 / 14 Q`, and the score marked by ASHA.
+4. Check HOME still shows the same mock count as before, and that the practice run is **not** the "last mock".
+5. `npm test` — 127 passing.
+
+**Not done yet, deliberately:** whether practice question-level data (measured timings, accuracy by type) should feed the per-type analytics. The trade-off is real — ASHA's questions are not calibrated against a mock provider's — so it needs a decision rather than a default. The data is stored regardless.
+
 ## 2026-08-03 — v3 (2/4): GMAT and MAT reference data, and a fabricated time limit removed
 
 **What changed**

@@ -89,9 +89,21 @@ ASHA now knows what a GMAT and a MAT paper look like — their sections, questio
 
 This is deliberate, and the GMAT reason is worth stating: the GMAT is adaptive and scored on a 205–805 scale by an algorithm that weighs question difficulty. There is no such thing as "marks per question" on a GMAT. ASHA can count your correct answers honestly, but a count of correct answers is not a GMAT score, and no screen has yet been checked for wording that might blur the two. Rather than ship something that reads like a score prediction — which ASHA refuses to do for any exam — the groundwork is in place and the exams stay switched off.
 
+## Practising inside ASHA (added 2026-08-04)
+
+ASHA now has practice questions of its own. Open the LOG tab and tap **Practise in ASHA**: pick a paper, and ASHA shows you the questions, runs the clock, lets you move between questions in any order, and marks the whole thing the moment you submit. No answer key to check by hand, and your timings are measured rather than remembered.
+
+Saying how sure you were is one optional tap per question. Only questions you tag count towards your calibration — so tag honestly or don't tag at all.
+
+**Every question says where it came from.** ASHA's own questions are labelled as written by ASHA. If a question is ever licensed from a coaching institute, that institute is named on the card. ASHA does not carry copies of real CAT, SimCAT or AIMCAT papers, and it never will without a licence — those are somebody else's copyrighted work, and "it's on the internet" is not permission.
+
+**A practice set is not a mock, and ASHA won't pretend otherwise.** A 14-question practice paper is marked out of 42; a real CAT mock is out of 204. Putting the two in the same trend line would produce a number that means nothing, so practice runs stay out of your mock count and out of your cross-mock trend. They're listed on the practice screen, with your score, whenever you want to look back at them.
+
+What ASHA still won't do here: tell you *why* you got something wrong. It marks right and wrong, but concept-versus-misread-versus-careless-versus-ran-out-of-time is your own judgement, tagged afterwards. Guessing it for you would be the kind of overclaim the rest of the app is built to avoid.
+
 ## Deferred, on purpose
 
-Flashcards and micro-quizzes; OCR of result screenshots; AI anything; XAT, NMAT, SNAP and CMAT. The schema anticipates most of these; the product does not ship them until the gates in CLAUDE.md are met.
+OCR of result screenshots; AI anything; XAT, NMAT, SNAP and CMAT; uploading your own mock papers. The schema anticipates most of these; the product does not ship them until the gates in CLAUDE.md are met.
 
 ## Current status
 

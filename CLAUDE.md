@@ -21,7 +21,16 @@ The instrument metaphor is the product rule: a sextant does not steer the ship, 
 These are not preferences. Breaking one is a bug.
 
 1. **ASHA does not teach.** No lectures, no concept videos, no original syllabus content. It diagnoses and points at what to revise.
-2. **ASHA is not a mock bank.** It never ships a shared library of CAT/GMAT/MAT questions. See "Content and copyright" below — this is the legal moat, not a feature choice.
+2. **ASHA never ships an UNLICENSED shared bank of real exam questions.** *(Amended 2026-08-04 — this rule previously read "ASHA is not a mock bank. It never ships a shared library of CAT/GMAT/MAT questions.")*
+
+   The prohibition that matters is unchanged and absolute: **no CAT, SimCAT, AIMCAT, MAT or GMAT item ever enters this codebase or database without a licence.** That is the legal moat (see "Content and copyright"), and it is now also a commercial one — the stated plan is to license content *from* coaching institutes, and holding their items without a licence would end that conversation before it started.
+
+   What the amendment permits is content ASHA is entitled to serve, and only with its provenance recorded per item:
+   - **`original`** — written for ASHA, hand-drafted or agent-drafted and hand-verified. Never "in the style of" a real item.
+   - **`licensed`** — a third party's, under an agreement, with the owner named on screen and an expiry recorded.
+   - **`private`** — a single student's own material, visible to nobody else. **Reserved and not writable**: this is the case CLAUDE.md still flags as needing an IP opinion.
+
+   `content_sources` enforces this structurally — there is no way to insert a question without a source, and a `licensed` row cannot exist without a named owner. **A shared bank of unlicensed real items remains not a scope decision and cannot be opened.**
 3. **ASHA never claims more than the data supports.** Every insight carries the sample size it rests on and a confidence label. An insight below the evidence threshold is not shown at all. Overclaiming from n=2 is the fastest way to lose a serious aspirant.
 4. **No leaderboards, no ranks, no peer comparison.** Every number a student sees is their own. Percentile is a field the student *reports from their mock platform*, never something ASHA computes or implies.
 5. **ASHA never fabricates data.** If timing was estimated rather than measured, every analysis built on it says so. See "The honest-data rule."
@@ -94,6 +103,8 @@ ASHA's core asset is trust in its numbers. Four enforcement mechanisms, all mand
 - **The student's uploaded material is private, forever.** Files live in a per-user storage folder, are never read cross-student, are never used to seed shared content, and are never sent to an AI service without the student's explicit per-file action.
 - **GMAT content is off-limits even as a private upload** until counsel says otherwise, given GMAC's individual-use licence language. GMAT support means analytics on the student's own *results*, nothing else.
 - **Original practice content only**, if and when micro-quizzes ship: hand-written or agent-drafted-and-hand-verified items over public-domain passages. Never "in the style of" reproductions of real items.
+- **Every stored question carries a `content_sources` row** *(added 2026-08-04, migration `0009`)*. Provenance is not optional metadata — it is the thing that distinguishes lawful content from infringement, and a schema able to hold an anonymous question is a schema that invites the mistake. Seeded original content additionally **recomputes every answer key from first principles before writing**, because a wrong key is invisible, marks a correct student wrong, and then poisons their error-cause tags and confidence calibration.
+- **"But it's freely available online" is not a licence.** The IIMs publish no CAT past papers at all; what circulates is coaching institutes' *reconstructions*, which are those institutes' own copyrighted work. Copyright is automatic and needs no notice. Public readability grants reading, not reproduction.
 - **Open legal question, flagged deliberately:** whether a student uploading their own purchased mock into a private analytics tool is defensible fair dealing. This needs an IP lawyer's written opinion before any upload feature ships. Until then, build the analytics against *manually entered attempt data only* — which requires no upload at all, and is the MVP anyway.
 
 ## Scope boundary — v1
@@ -239,11 +250,14 @@ Any seeded content — taxonomy nodes, archetype definitions, revision-source su
 - **Not yet built:** persisting computed claims to the `insights` table with `acted_on` carry-forward; the PWA layer and Apple meta tags; the Capacitor Android build; a real privacy policy and support address behind the `/account` footer links.
 - **v3 in progress (2026-08-03).** Item 1, **in-app timed test mode**, shipped and verified on a real run. Item 2, **GMAT and MAT reference data**, seeded and asserted against the live database: 90 taxonomy nodes across 8 sections, both exams `active = false`. Items 3 (OCR) and 4 (micro-quizzes) not started; each needs a builder decision first — a recurring AI bill, and a content-volume commitment.
 - **A fabrication fixed while seeding MAT (2026-08-03).** `TimedRunner` read `(timeLimitMin ?? 40) * 60`. Every CAT section is 40 minutes so it never showed, but MAT sets no sectional clock at all, and against a MAT section it would have imposed a 40-minute limit, cut the run off there, and said "the clock stops itself at 40 minutes, like the real one." The derivation now lives in `lib/sectionClock.ts` with 12 tests. **The general lesson:** `?? <plausible default>` on a value that is null *because the world is genuinely different there* silently invents a fact.
-- **Dev tooling:** `npm test` (node --test, runs TypeScript natively, **101 passing**), `scripts/check-analytics.ts` (runs every analytic against the live database), `scripts/seed-dev-attempts.mjs --phone N [--delete]` (8 deterministic `[SYNTH]` mocks so thresholds can be crossed), `npm run seed:gmat-mat`.
+- **Practice delivery shipped (2026-08-04).** ASHA can now put questions on screen, time them, and mark them against its own key — migration `0009`, `/practice`, and 14 verified original QA questions. **Practice runs are excluded from the mock count and the cross-mock trend**: a 14-question set scores out of 42 against a mock's 204, and blending them would produce a trend figure with no meaning. Whether to blend the *question-level* data into per-type analytics is an open builder decision, deliberately not defaulted.
+- **Dev tooling:** `npm test` (node --test, runs TypeScript natively, **127 passing**), `scripts/check-analytics.ts` (runs every analytic against the live database), `scripts/seed-dev-attempts.mjs --phone N [--delete]` (8 deterministic `[SYNTH]` mocks so thresholds can be crossed), `npm run seed:gmat-mat`, `npm run seed:practice`.
 - Owner: solo builder (coding novice) + Claude Code.
 - Open items carried deliberately: the IP opinion on private mock upload; **legal review of the privacy policy and terms text**; a dedicated support address to replace the personal one; real-OTP verification on a physical phone; a signing keystore for a release APK.
 
 ## Amendment log
+
+- **2026-08-04** — **Hard product rule 2 amended**: "not a mock bank" → "never an *unlicensed shared* bank". ASHA may now serve practice questions, but only `original`, `licensed` (attributed, with expiry) or `private` (reserved) content, with provenance per item enforced by `content_sources` (migration `0009`). Prompted by the builder's decision to include practice tests, with a stated longer-term plan to license content from coaching centres. The absolute prohibition on unlicensed real exam items is unchanged. Reasoning in `docs/decisions.md`.
 
 - **2026-08-01** — **v1 → v2 gate overridden, unmet**, by explicit builder decision. v2 opened for the spaced revision queue only. OCR, micro-quizzes and AI stay out. Reasoning in `docs/decisions.md`.
 

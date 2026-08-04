@@ -20,10 +20,13 @@ export default async function LogPage() {
 
   const { data: attempts } = await supabase
     .from("mock_attempts")
-    .select("id, taken_on, total_score, percentile_reported, is_complete, mock_sources(title, provider)")
+    .select("id, taken_on, total_score, percentile_reported, is_complete, paper_id, mock_sources(title, provider)")
     .order("taken_on", { ascending: false });
 
-  const rows = attempts ?? [];
+  // Practice runs are not mocks and are not counted here — "11 mocks logged" when
+  // one of them is a 14-question practice set is simply untrue. They are listed on
+  // /practice instead, which is also where the honest comparison lives.
+  const rows = (attempts ?? []).filter((a) => a.paper_id === null);
   const unfinished = rows.filter((a) => !a.is_complete);
   const finished = rows.filter((a) => a.is_complete);
 
@@ -105,6 +108,28 @@ export default async function LogPage() {
         )}
 
         <div className="mt-auto pb-6 pt-2">
+          {/*
+            Practice lives inside the LOG tab rather than becoming a fifth bottom-nav
+            tab: CLAUDE.md fixes the navigation at four (HOME / PLAYBOOK / TRENDS /
+            LOG), and this is the tab for putting data in, which is what both of
+            these do. The wording draws the distinction that matters — a logged mock
+            was taken elsewhere and its timings are recalled; a practice paper is
+            taken here and its timings are measured.
+          */}
+          <Link
+            href="/practice"
+            className="mb-3 flex items-center justify-between rounded-[13px] border border-brass/40 bg-brass/[0.06] px-4 py-3.5"
+          >
+            <span>
+              <span className="block font-mono text-[10px] font-semibold tracking-[0.14em] text-brass">
+                PRACTISE IN ASHA
+              </span>
+              <span className="mt-1 block text-[12.5px] leading-relaxed text-[#4A463D]">
+                Questions ASHA wrote itself, timed and marked here.
+              </span>
+            </span>
+            <span className="ml-3 font-mono text-[13px] text-brass">→</span>
+          </Link>
           <Link
             href="/log/new"
             className="block rounded-[13px] bg-brass py-4 text-center text-[15px] font-semibold text-white"

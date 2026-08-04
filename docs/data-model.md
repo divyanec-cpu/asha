@@ -104,6 +104,8 @@ Descriptive counts of what the student logged ("you attempted 4 DILR sets and cl
 | Marks lost to guessing | `n_guesses × (p_correct × mark_correct + (1 − p_correct) × mark_wrong_mcq)`, where `p_correct` is measured accuracy at confidence 1. **Only emit when the loss clears a materiality floor** — under CAT's +3/−1 the breakeven accuracy is 25%, so guessing at 22% costs about 0.12 marks per guess and the honest finding is nearly neutral | 30 tagged answers **and** loss past the materiality floor |
 | Pacing (marks by quarter) | `section_attempts.quarter_marks` as entered by the student from their mock platform's own analysis. **Not derivable** — neither v1 entry flow captures attempt order, so there is no honest way to infer it from time buckets | 3 mocks **with** quarter marks present |
 | Global confidence chip ("12 MOCKS · HIGH CONFIDENCE") | no live insight → "no confident reading yet"; any live → `low`; majority of live kinds at ≥2× threshold → `medium`; at ≥3× → `high` | — |
+| Practice grading (`lib/grading.ts`) | Per question: correct → `exam_configs.mark_correct`; wrong MCQ → `mark_wrong_mcq`; wrong TITA → `mark_wrong_numeric`; **unanswered → 0 and `is_correct = null`**, never "wrong", because grading a blank as wrong invents a penalty the real paper does not apply. TITA compares as a **number** when both sides parse as one (`0.5`, `.5`, `0.50`, `1,200` all match) but is **never rounded** — `0.333` and `0.334` stay different answers. Section total is the sum of per-question marks, rounded to 2dp so float addition cannot disagree with the stored value | — (deductive from the marking rules, not a claim about the student) |
+| Working order (`lib/workingOrder.ts`) | The *n*th distinct question a student opens gets `order_index = n`. Revisiting does not renumber — first visit is what "the order worked in" means. Orders are gapless from 1 | — |
 | Section clock during a timed run (`lib/sectionClock.ts`) | `time_limit_min` present → countdown `time_limit_min × 60 − elapsed`, auto-stop at zero, urgent inside 120s, bar = `elapsed / total`. `time_limit_min IS NULL` → **count up**, never expires, never urgent, bar = `current_question / question_count`. Not a claim about the student, so no threshold — but it is listed here because it is a number on screen, and until 2026-08-03 it was a fabricated one: the code read `(timeLimitMin ?? 40) * 60`, which would have imposed a 40-minute limit on MAT sections that have none | — |
 
 ## Reserved in practice
@@ -130,6 +132,41 @@ Defined and seeded, but nothing reads them in v1. Listed so no one wires a UI to
 - **`0004_insights.sql`** — `insights` with not-null evidence columns; `revision_queue` reserved.
 - **`0006_set_tally.sql`** *(2026-07-30)* — `num_attempted` and `num_correct` on `set_attempts`, both nullable (a set never opened has no tally), with `set_attempts_tally_bounds` enforcing `correct ≤ attempted ≤ num_questions`. Additive and reversible. Exists so marks stay recomputable from a corrected `exam_configs` row, and so "answered 4 of 4" is distinguishable from "answered 1 of 4".
 - **`0005_passage_domain.sql`** *(2026-07-29)* — extends `question_types.kind` with `passage_domain` and reclassifies the 7 already-seeded VARC domain leaves; adds nullable `passage_domain_id` to `question_attempts` with a partial index; adds `assert_passage_domain_valid()` and its trigger. Additive and reversible — the rollback is written out at the foot of the migration file.
+
+- **`0009_practice_content.sql`** *(2026-08-04)* — the practice-content layer. Five new tables plus three additive nullable columns and a widened `entry_mode`. Additive and reversible.
+
+## Practice content (`0009`, 2026-08-04)
+
+The tables that let ASHA put questions on screen. **Every one of them hangs off a source**, because a schema that can hold a question without recording who owns it is a schema that invites the mistake CLAUDE.md rule 2 exists to prevent.
+
+- **`content_sources`** — id, code (unique), name, **kind** (`original` / `licensed` / `private`), owner_name, licence_note, licence_expires_on, attribution_required, owner_user_id, active. Two CHECKs do the real work: `licensed` cannot exist without a named owner (attribution would be impossible), and `owner_user_id` is present **exactly when** kind is `private`.
+
+  | kind | means | writable today |
+  |---|---|---|
+  | `original` | written for ASHA; hand- or agent-drafted and hand-verified | yes |
+  | `licensed` | a third party's, under agreement, attributed, with expiry | yes (none seeded) |
+  | `private` | one student's own material, visible to nobody else | **no — reserved** |
+
+  `private` is **read-policied but has no write path**. It is the case CLAUDE.md flags as needing an IP opinion. The read policies already exclude other users' private rows, so enabling it later means adding an insert policy — not rewriting the read path, which is the version of that change that leaks one student's material to another.
+
+- **`question_stimuli`** — id, source_id, exam_id, section_id, kind (`passage` / `set_data`), title, body, passage_domain_id, archetype_id, active. One table for both, because an RC passage and a DILR set's data are the same shape to the delivery engine: a block of material several questions hang off.
+- **`question_items`** — id, source_id, exam_id, section_id, stimulus_id, question_type_id, passage_domain_id, stem, response_format (`mcq`/`tita`), options (jsonb array), correct_option (**1-based**, to match how a paper labels them, so an off-by-one is visible rather than silent), correct_answer (text, compared as normalised value), solution, difficulty, active. Two CHECKs make an ungradable item impossible to insert: an `mcq` must have 2–6 options and a key inside that range and no TITA answer; a `tita` must have a non-blank answer and no MCQ fields. **No marks column** — marks come from `exam_configs` at grading time (rule 7).
+- **`practice_papers`** — id, source_id, exam_id, code (unique), title, description, is_full_mock, **time_limit_min**, active (defaults false, opt in like exams). CHECK: only a full mock may leave `time_limit_min` null. A 14-question set handed CAT's full 40-minute QA clock would train precisely the wrong pacing.
+- **`paper_items`** — id, paper_id, question_item_id, section_id, question_number. Unique on (paper_id, section_id, question_number) and on (paper_id, question_item_id), so numbers cannot collide and an item cannot appear twice.
+
+**Added to existing tables**, all nullable so every prior attempt stays valid:
+
+- `mock_attempts.paper_id` → `practice_papers`. Non-null means the attempt was taken **inside** ASHA.
+- `mock_attempts.entry_mode` gains **`in_app_test`**. Distinct from `timed_in_app`, which means "ASHA ran the clock while the student worked their own paper, holding no questions" — only `in_app_test` has a machine-graded key behind it. The migration looks up the old constraint's auto-generated name rather than guessing it; guessing wrong would leave both constraints in place, with the old one silently rejecting the new value.
+- `question_attempts.question_item_id`, `selected_option` (1-based, mcq), `response_text` (tita).
+
+**RLS.** All five tables are select-only for authenticated, gated on the source being non-private or owned by the caller. **No insert/update/delete policies at all** — writes happen through service-role seed scripts, exactly as for the other shared reference tables.
+
+### Practice attempts are excluded from the cross-mock analytics
+
+`lib/analytics/load.ts` filters out attempts with a non-null `paper_id`, and so do `/log` and the mock count. A 14-question practice set scores out of 42; a CAT mock out of 204. Blending them would put a 5 beside a 118 in the trend series and compute "+8.7 vs your last three" across both — a number with no meaning — and would inflate the mock count driving the global confidence chip.
+
+**Open, and deliberately not defaulted:** whether practice *question-level* rows (measured timings, accuracy by type, confidence) should feed the per-type analytics. ASHA's own questions are not calibrated against a mock provider's, so this is a real trade-off and a builder decision. The rows are stored either way.
 
 ## Functions (continued)
 

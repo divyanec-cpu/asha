@@ -42,11 +42,30 @@ export async function loadAnalyticsData(): Promise<AnalyticsData | null> {
   const { data: attempts } = await supabase
     .from("mock_attempts")
     .select(
-      "id, taken_on, total_score, timing_source, is_complete, mock_sources(title, provider), exam_configs(mark_correct, mark_wrong_mcq, mark_wrong_numeric)",
+      "id, taken_on, total_score, timing_source, is_complete, paper_id, mock_sources(title, provider), exam_configs(mark_correct, mark_wrong_mcq, mark_wrong_numeric)",
     )
     .order("taken_on");
 
-  const all = attempts ?? [];
+  /*
+   * PRACTICE ATTEMPTS ARE EXCLUDED FROM THE CROSS-MOCK ANALYTICS.
+   *
+   * An attempt with a `paper_id` was taken inside ASHA against a practice paper.
+   * The 14-question QA set scores out of 42; a CAT mock scores out of 204. Letting
+   * one into this series would put a 5 next to a 118 and then compute "+8.7 vs your
+   * last three" across both — a number with no meaning, of exactly the kind the
+   * derived-measures rule exists to prevent. It would also inflate the mock count
+   * that drives the global confidence chip, so a student would be told their
+   * readings were firmer because they had done a short practice set.
+   *
+   * This is conservative on purpose. The question-level data from a practice run —
+   * measured timings, accuracy by question type, confidence — is genuinely useful
+   * and is all stored. Whether to blend it into the per-type analytics is a real
+   * decision with a real trade-off (ASHA's own questions are not calibrated against
+   * a mock provider's), and it belongs to the builder, not to a default chosen here.
+   * Until then: practice results are shown for the run itself, and kept out of any
+   * claim about how the student is doing across mocks.
+   */
+  const all = (attempts ?? []).filter((a) => a.paper_id === null);
   const complete = all.filter((a) => a.is_complete);
 
   // Marking scheme from the most recent attempt's config. Never hardcoded: a
