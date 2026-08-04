@@ -162,6 +162,20 @@ The tables that let ASHA put questions on screen. **Every one of them hangs off 
 
 **RLS.** All five tables are select-only for authenticated, gated on the source being non-private or owned by the caller. **No insert/update/delete policies at all** — writes happen through service-role seed scripts, exactly as for the other shared reference tables.
 
+**Query gotcha — `question_items` → `question_types` needs the FK named.** There are **two** foreign keys between them (`question_type_id` and `passage_domain_id`), so a bare embed fails with `PGRST201 Could not embed because more than one relationship was found`. Use the explicit form:
+
+```
+question_types!question_items_question_type_id_fkey(code, name)
+```
+
+Also, and separately: a select string passed to supabase-js must be **one string literal**. A concatenation (`"a, " + "b"`) widens to `string` at the type level and every field comes back typed as `GenericStringError`.
+
+### Re-seeding breaks past runs' item links (known, unfixed)
+
+`seed-practice-qa.mjs` deletes and re-inserts the item pool, because `question_items` has no natural key to upsert on. The grading of a past run survives — `question_item_id` is `ON DELETE SET NULL`, and correctness, marks and timings live on the attempt row — but *which question this was* is lost.
+
+Harmless while the only history is test runs. The fix is a stable `question_items.code`, unique per source, upserted rather than deleted; it needs a small migration and should land before a real student accumulates history.
+
 ### Practice attempts are excluded from the cross-mock analytics
 
 `lib/analytics/load.ts` filters out attempts with a non-null `paper_id`, and so do `/log` and the mock count. A 14-question practice set scores out of 42; a CAT mock out of 204. Blending them would put a 5 beside a 118 in the trend series and compute "+8.7 vs your last three" across both — a number with no meaning — and would inflate the mock count driving the global confidence chip.

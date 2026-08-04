@@ -2,6 +2,27 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-04 — Practice content: 43 questions across three tiers
+
+**What changed**
+- **29 more original QA questions**, taking the pool from 14 to **43**.
+- **Three papers** instead of one, assembled from a shared item pool: **QA 1** (14 q, 25 min, warm-up), **QA Coverage** (31 q, 56 min, one question per CAT QA type), **QA Challenge** (12 q, 30 min, real CAT difficulty).
+- The seed now supports multiple papers as **data**, writes the item pool once so a shared item is one row rather than two that could drift, and asserts three new invariants.
+
+**Why three tiers rather than one bigger set.** Asked to finalise the content as the specialist, and my own critique of the first batch was that it was too soft for CAT. But rewriting the easy questions would have thrown away something useful: an easy question is *better* at telling you whether someone knows a topic at all, which is exactly what the coverage set is for. A hard question answers a different question. So the easy set kept its job, and a hard tier was added alongside with its purpose stated on the card.
+
+**The coverage set is one question per CAT QA type — all 31 of them.** That is what makes a per-type reading meaningful rather than an artefact of which topics happened to get written first. The seed asserts it, and asserts that no type is repeated *within that tier* (the challenge tier repeats types deliberately).
+
+**Every challenge distractor encodes a real mistake.** The two-articles profit question offers "no profit, no loss" — the near-universal error of assuming +20% and −20% cancel, when the cost prices differ. The α⁴+β⁴ question offers 484, where you stop before subtracting 2(αβ)². The conditional-probability question offers 1/4, the unconditional answer. A wrong option that corresponds to a specific error makes the question diagnostic: *which* way the student went wrong, not merely that they did.
+
+**New assertions in the seed:** every challenge question must be rated `hard` (a moderate one hiding in that tier would quietly flatter), and each paper's minutes-per-question must fall in a 60–180 s band — which catches a paper whose time was not updated after its question count changed. Same failure family as the old `?? 40` fabrication: a number inherited from a context it no longer fits.
+
+**How to test it**
+1. `npm run seed:practice` — 43 keys verified, then `coverage tier: 31 types, none repeated`, `challenge tier: 12 questions, all rated hard`, and a per-question pace line for each paper.
+2. `/practice` lists all three papers with their question counts and times.
+
+**A PostgREST gotcha worth knowing:** `question_items` has **two** foreign keys into `question_types` (`question_type_id` and `passage_domain_id`), so a bare `question_types(...)` embed fails with `PGRST201`. Disambiguate with `question_types!question_items_question_type_id_fkey(...)`.
+
 ## 2026-08-04 — Practice papers: ASHA can put questions on screen (Phase 1)
 
 **What changed**

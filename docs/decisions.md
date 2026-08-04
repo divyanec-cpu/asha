@@ -2,6 +2,32 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-04 — Three difficulty tiers, decided as the specialist
+
+The builder said plainly that they do not know how CAT works and could not review the questions, and asked me to finalise. Recording the reasoning, since nobody else was in a position to check it.
+
+**My own critique of the first batch was that it was too soft for CAT** — roughly a dozen of the 31 are trivial by real-paper standards, and a student clearing 90% learns nothing.
+
+**The obvious fix was wrong.** Rewriting the easy questions as hard ones would have destroyed something valuable: an easy question is *better* at establishing whether someone knows a topic at all, because failure is unambiguous. A hard question conflates "doesn't know the topic" with "knows it but couldn't crack this one". Those are different diagnoses needing different questions.
+
+So the tiers have distinct jobs, stated on the card so the student knows which they are taking:
+
+| Paper | Job |
+|---|---|
+| QA 1 (14 q, 25 min) | Warm-up; learn the interface without wasting hard questions |
+| QA Coverage (31 q, 56 min) | One question per CAT QA type. Find weak topics fast. Deliberately not all hard |
+| QA Challenge (12 q, 30 min) | Real CAT difficulty on the highest-yield topics |
+
+**Coverage is exactly one question per type — all 31.** That is what makes a per-type reading meaningful rather than an artefact of which topics got written first. Asserted in the seed, along with no repeats *within that tier*; the challenge tier repeats types on purpose.
+
+**Challenge distractors encode specific mistakes, not decoys.** "No profit, no loss" for the two-articles question (assuming ±20% cancel, when the cost prices differ); 484 for α⁴+β⁴ (stopping before subtracting 2(αβ)²); 1/4 for the conditional probability (ignoring the condition). A wrong option matching a real error tells you *which way* the student went wrong — which is the whole point of an instrument rather than a score.
+
+**Two new seed assertions**, both guarding against silent flattery: every challenge question must be rated `hard`, and each paper's seconds-per-question must fall within 60–180. The second catches a paper whose time was not updated after its question count changed — the same failure family as the `?? 40` fabrication: a number inherited from a context it no longer fits.
+
+**Timing is per tier, not uniform.** CAT averages ~109 s/question; the challenge set gets 150 s, because harder questions legitimately take longer and holding them to the average would measure the clock rather than the maths.
+
+**Still thin, and worth saying:** 43 questions is one section's worth of practice, and QA only. VARC and DILR have no content at all — and VARC additionally needs the runner to render a shared passage, which it currently cannot, since `question_stimuli` exists in the schema but the run page does not select or display it.
+
 ## 2026-08-04 — Practice content: the rule that changed, and the three that did not
 
 The builder asked for mock tests in the app, initially for one person (their niece), with a longer-term plan to **license content from coaching centres**.
