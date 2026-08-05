@@ -207,10 +207,164 @@ const CASELET = {
   monthTotal(i) { return this.data.shops.reduce((sum, s) => sum + this.data.sales[s][i], 0); },
 };
 
+// ─── Set 4: Games & tournaments ──────────────────────────────────────────────
+
+const GAMES = {
+  key: 'GAMES',
+  archetype: 'DILR.ARCH.GAMES',
+  title: 'Set 4 — a four-team round robin',
+  body: [
+    'Four teams — W, X, Y and Z — play a round robin in which every team plays every other team exactly once, so six matches are played in all.',
+    'A team scores 3 points for a win, 1 point for a draw and nothing for a loss. At the end of the tournament the points stood as follows:',
+    '  Team     Points\n  --------------\n  W             7\n  X             6\n  Y             1\n  Z             2',
+    'No match was abandoned.',
+  ].join('\n\n'),
+
+  /**
+   * Enumerates all 3^6 = 729 possible sets of results and keeps those producing the
+   * stated points. Each match is 'H' (first team wins), 'A' (second wins) or 'D'.
+   */
+  solve(pointsFor = { W: 7, X: 6, Y: 1, Z: 2 }, winValue = 3) {
+    const fixtures = [['W','X'], ['W','Y'], ['W','Z'], ['X','Y'], ['X','Z'], ['Y','Z']];
+    const out = [];
+    for (let mask = 0; mask < 3 ** 6; mask += 1) {
+      const results = [];
+      let m = mask;
+      for (let i = 0; i < 6; i += 1) { results.push(['H','A','D'][m % 3]); m = Math.floor(m / 3); }
+      const pts = { W: 0, X: 0, Y: 0, Z: 0 };
+      fixtures.forEach(([a, b], i) => {
+        if (results[i] === 'H') pts[a] += winValue;
+        else if (results[i] === 'A') pts[b] += winValue;
+        else { pts[a] += 1; pts[b] += 1; }
+      });
+      if (Object.keys(pointsFor).every(t => pts[t] === pointsFor[t])) {
+        out.push({ results, fixtures, pts });
+      }
+    }
+    return out;
+  },
+
+  /** Result of a named fixture, from the unique solution. */
+  resultOf(a, b) {
+    const s = this.solve()[0];
+    const i = s.fixtures.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    const r = s.results[i];
+    if (r === 'D') return 'a draw';
+    const winner = r === 'H' ? s.fixtures[i][0] : s.fixtures[i][1];
+    return `${winner} won`;
+  },
+};
+
+// ─── Set 5: Scheduling ───────────────────────────────────────────────────────
+
+const SCHEDULE = {
+  key: 'SCHEDULE',
+  archetype: 'DILR.ARCH.SCHEDULE',
+  title: 'Set 5 — five tasks, five days',
+  body: [
+    'Exactly one of five tasks — P, Q, R, S and T — is carried out on each working day of a single week, from Monday to Friday.',
+    'It is known that:',
+    '  (i)   P is carried out on the day immediately before Q.\n  (ii)  R is carried out on Wednesday.\n  (iii) S is carried out on some day before P.\n  (iv)  T is not carried out on Monday.',
+  ].join('\n\n'),
+
+  days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+
+  solve(variant = {}) {
+    const dropIV = variant.dropIV ?? false;
+    return permutations(['P', 'Q', 'R', 'S', 'T']).filter((row) => {
+      const at = (t) => row.indexOf(t);
+      if (at('Q') !== at('P') + 1) return false;      // (i)
+      if (at('R') !== 2) return false;                 // (ii) Wednesday is index 2
+      if (at('S') >= at('P')) return false;            // (iii)
+      if (!dropIV && at('T') === 0) return false;      // (iv)
+      return true;
+    });
+  },
+};
+
+// ─── Set 6: Venn diagrams ────────────────────────────────────────────────────
+
+const VENN = {
+  key: 'VENN',
+  archetype: 'DILR.ARCH.VENN',
+  title: 'Set 6 — three languages',
+  d: { total: 120, H: 70, E: 60, M: 45, HE: 30, EM: 20, HM: 25, HEM: 10 },
+  get body() {
+    const d = this.d;
+    return [
+      `A survey of ${d.total} students recorded which of three languages — Hindi, English and Marathi — each student can speak.`,
+      'The findings were:',
+      `  Speak Hindi                    ${String(d.H).padStart(4)}\n`
+      + `  Speak English                  ${String(d.E).padStart(4)}\n`
+      + `  Speak Marathi                  ${String(d.M).padStart(4)}\n`
+      + `  Speak Hindi and English        ${String(d.HE).padStart(4)}\n`
+      + `  Speak English and Marathi      ${String(d.EM).padStart(4)}\n`
+      + `  Speak Hindi and Marathi        ${String(d.HM).padStart(4)}\n`
+      + `  Speak all three                ${String(d.HEM).padStart(4)}`,
+      'Each pairwise figure includes those who speak all three.',
+    ].join('\n\n');
+  },
+  union() { const d = this.d; return d.H + d.E + d.M - d.HE - d.EM - d.HM + d.HEM; },
+  none() { return this.d.total - this.union(); },
+  exactlyOne() {
+    const d = this.d;
+    return (d.H - d.HE - d.HM + d.HEM) + (d.E - d.HE - d.EM + d.HEM) + (d.M - d.EM - d.HM + d.HEM);
+  },
+  exactlyTwo() {
+    const d = this.d;
+    return (d.HE - d.HEM) + (d.EM - d.HEM) + (d.HM - d.HEM);
+  },
+};
+
+// ─── Set 7: Routes & networks ────────────────────────────────────────────────
+
+const NETWORK = {
+  key: 'NETWORK',
+  archetype: 'DILR.ARCH.NETWORK',
+  title: 'Set 7 — six towns',
+  edges: [
+    ['A','B',4], ['A','C',2], ['B','C',1], ['B','D',5],
+    ['C','D',8], ['C','E',10], ['D','E',2], ['D','F',6], ['E','F',3],
+  ],
+  get body() {
+    const rows = this.edges.map(([a, b, d]) => `  ${a} – ${b}${String(d).padStart(9)}`);
+    return [
+      'Six towns, A to F, are connected by the roads listed below. Each road can be travelled in either direction, and the distances are in kilometres.',
+      ['  Road       Distance', '  -------------------', ...rows].join('\n'),
+      'There are no other roads between these towns.',
+    ].join('\n\n');
+  },
+
+  /** Dijkstra. `closed` omits a road, for the "what if" question. */
+  shortest(from, to, closed = null) {
+    const usable = this.edges.filter(([a, b]) =>
+      !(closed && ((a === closed[0] && b === closed[1]) || (a === closed[1] && b === closed[0]))));
+    const nodes = [...new Set(usable.flatMap(([a, b]) => [a, b]))];
+    const dist = Object.fromEntries(nodes.map(n => [n, Infinity]));
+    const prev = {};
+    dist[from] = 0;
+    const unvisited = new Set(nodes);
+    while (unvisited.size) {
+      let u = null;
+      for (const n of unvisited) if (u === null || dist[n] < dist[u]) u = n;
+      unvisited.delete(u);
+      if (dist[u] === Infinity) break;
+      for (const [a, b, w] of usable) {
+        const v = a === u ? b : b === u ? a : null;
+        if (v === null || !unvisited.has(v)) continue;
+        if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; }
+      }
+    }
+    const path = [];
+    for (let at = to; at !== undefined; at = prev[at]) { path.unshift(at); if (at === from) break; }
+    return { distance: dist[to], path };
+  },
+};
+
 // ─── Questions ───────────────────────────────────────────────────────────────
 // `answer` is a FUNCTION of the solved set, never a declared constant.
 
-const SETS = [ARRANGE, BINARY, CASELET];
+const SETS = [ARRANGE, BINARY, CASELET, GAMES, SCHEDULE, VENN, NETWORK];
 
 const QUESTIONS = [
   // ── Set 1 ──
@@ -331,6 +485,156 @@ const QUESTIONS = [
       'A (120, 150, 180) and C (90, 135, 180) rise every month. B falls throughout. D is flat from '
       + 'April to May, and flat is not an increase — which is the trap.',
   },
+
+  // ── Set 4: Games ──
+  {
+    set: 'GAMES', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'moderate',
+    stem: 'How many of the six matches were drawn?',
+    answer: () => GAMES.solve()[0].results.filter(r => r === 'D').length,
+    solution:
+      '7 can only be 3+3+1, so W won two and drew one. 6 can only be 3+3+0, so X won two and drew '
+      + 'none. 1 must be 1+0+0 and 2 must be 1+1+0. Draw participations therefore total 1+0+1+2 = 4, '
+      + 'which is two drawn matches.',
+  },
+  {
+    set: 'GAMES', skill: 'DILR.SKILL.DEDUCE', format: 'mcq', difficulty: 'hard',
+    stem: 'What was the result of the match between W and Z?',
+    options: ['W won', 'Z won', 'a draw', 'It cannot be determined'],
+    answer: () => GAMES.resultOf('W', 'Z'),
+    solution:
+      'Z drew two matches and X drew none, so Z’s draws were against W and Y. W drew exactly one '
+      + 'match, which must therefore be the one against Z.',
+  },
+  {
+    set: 'GAMES', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'How many matches did X win?',
+    answer: () => {
+      const s = GAMES.solve()[0];
+      return s.fixtures.filter(([a, b], i) =>
+        (a === 'X' && s.results[i] === 'H') || (b === 'X' && s.results[i] === 'A')).length;
+    },
+    solution: 'X’s 6 points can only come from two wins and one loss, so X won two matches.',
+  },
+  {
+    set: 'GAMES', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'hard',
+    stem: 'Suppose a win had been worth 2 points instead of 3, with a draw still worth 1. How many points would W have finished with?',
+    // Recomputed from the SAME results, rescored — not from a declared number.
+    answer: () => {
+      const s = GAMES.solve()[0];
+      let pts = 0;
+      s.fixtures.forEach(([a, b], i) => {
+        if (a === 'W') pts += s.results[i] === 'H' ? 2 : s.results[i] === 'D' ? 1 : 0;
+        else if (b === 'W') pts += s.results[i] === 'A' ? 2 : s.results[i] === 'D' ? 1 : 0;
+      });
+      return pts;
+    },
+    solution: 'W won two and drew one, so under 2-points-per-win that is 2 + 2 + 1 = 5 points.',
+  },
+
+  // ── Set 5: Scheduling ──
+  {
+    set: 'SCHEDULE', skill: 'DILR.SKILL.DEDUCE', format: 'mcq', difficulty: 'moderate',
+    stem: 'Which task is carried out on Monday?',
+    options: ['P', 'Q', 'S', 'T'],
+    answer: () => SCHEDULE.solve()[0][0],
+    solution:
+      'R takes Wednesday, so the P–Q pair must occupy Monday–Tuesday or Thursday–Friday. Monday–'
+      + 'Tuesday leaves no earlier day for S, so P and Q take Thursday and Friday. S and T then fill '
+      + 'Monday and Tuesday, and since T cannot be Monday, S is on Monday.',
+  },
+  {
+    set: 'SCHEDULE', skill: 'DILR.SKILL.READ', format: 'mcq', difficulty: 'easy',
+    stem: 'On which day is T carried out?',
+    options: ['Monday', 'Tuesday', 'Thursday', 'Friday'],
+    answer: () => SCHEDULE.days[SCHEDULE.solve()[0].indexOf('T')],
+    solution: 'The schedule is S, T, R, P, Q from Monday to Friday, so T is on Tuesday.',
+  },
+  {
+    set: 'SCHEDULE', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'easy',
+    stem: 'How many tasks are carried out before R?',
+    answer: () => SCHEDULE.solve()[0].indexOf('R'),
+    solution: 'R is on Wednesday, the third day, so two tasks precede it.',
+  },
+  {
+    set: 'SCHEDULE', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'hard',
+    stem: 'Suppose condition (iv) were dropped, so that T could be carried out on any day. How many different schedules would then be possible?',
+    // Counted by re-solving without (iv).
+    answer: () => SCHEDULE.solve({ dropIV: true }).length,
+    solution:
+      'Conditions (i) to (iii) still force P and Q onto Thursday and Friday and R onto Wednesday, '
+      + 'leaving S and T to fill Monday and Tuesday in either order. So two schedules — and (iv) is '
+      + 'exactly what picks one of them out.',
+  },
+
+  // ── Set 6: Venn ──
+  {
+    set: 'VENN', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'moderate',
+    stem: 'How many of the students surveyed speak none of the three languages?',
+    answer: () => VENN.none(),
+    solution:
+      'By inclusion–exclusion, 70 + 60 + 45 − 30 − 20 − 25 + 10 = 110 speak at least one, so 10 of '
+      + 'the 120 speak none.',
+  },
+  {
+    set: 'VENN', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'hard',
+    stem: 'How many students speak exactly one of the three languages?',
+    answer: () => VENN.exactlyOne(),
+    solution:
+      'Hindi only is 70 − 30 − 25 + 10 = 25; English only is 60 − 30 − 20 + 10 = 20; Marathi only is '
+      + '45 − 20 − 25 + 10 = 10. That totals 55. Adding back the pairwise overlap is what stops those '
+      + 'who speak all three being subtracted twice.',
+  },
+  {
+    set: 'VENN', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'moderate',
+    stem: 'How many students speak exactly two of the three languages?',
+    answer: () => VENN.exactlyTwo(),
+    solution:
+      'Each pairwise figure includes the ten who speak all three, so exactly two is '
+      + '(30 − 10) + (20 − 10) + (25 − 10) = 45.',
+  },
+  {
+    set: 'VENN', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'easy',
+    stem: 'How many students speak Hindi but not English?',
+    answer: () => VENN.d.H - VENN.d.HE,
+    solution:
+      '70 speak Hindi and 30 of them also speak English, so 40 speak Hindi without English. The '
+      + 'all-three group needs no separate treatment here, since it is already inside the 30.',
+  },
+
+  // ── Set 7: Networks ──
+  {
+    set: 'NETWORK', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'hard',
+    stem: 'What is the shortest distance, in kilometres, from A to F?',
+    answer: () => NETWORK.shortest('A', 'F').distance,
+    solution:
+      'A–C–B is 3 km, shorter than A–B directly. From B, D is 8 km and then E is 10 km. F is reached '
+      + 'in 14 km via D but 13 km via E, so the shortest route is A–C–B–D–E–F at 13 km.',
+  },
+  {
+    set: 'NETWORK', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'moderate',
+    stem: 'What is the shortest distance, in kilometres, from A to D?',
+    answer: () => NETWORK.shortest('A', 'D').distance,
+    solution:
+      'A–C–B–D is 2 + 1 + 5 = 8 km, which beats A–B–D at 9 km and A–C–D at 10 km. The trap is '
+      + 'assuming the direct A–B road must be part of the best route.',
+  },
+  {
+    set: 'NETWORK', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'How many towns lie on the shortest route from A to F, counting A and F themselves?',
+    answer: () => NETWORK.shortest('A', 'F').path.length,
+    solution:
+      'The shortest route is A–C–B–D–E–F, so six towns lie on it. Note that it passes through C '
+      + 'even though A and B are directly connected, because going via C is 1 km shorter.',
+  },
+  {
+    set: 'NETWORK', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'hard',
+    stem: 'Suppose the road between D and E were closed. What would the shortest distance from A to F then be, in kilometres?',
+    // Recomputed with the edge removed.
+    answer: () => NETWORK.shortest('A', 'F', ['D', 'E']).distance,
+    solution:
+      'Without D–E, E can only be reached from C at 12 km, making F 15 km that way, while F via D is '
+      + '8 + 6 = 14 km. So the shortest becomes 14 km along A–C–B–D–F.',
+  },
 ];
 
 // ─── Assertions ──────────────────────────────────────────────────────────────
@@ -344,15 +648,37 @@ function verifyContent() {
   console.log('solving every set from scratch...\n');
 
   // A set with more than one solution is worse than a wrong one: it looks fine and
-  // marks a correctly-reasoning student wrong.
-  for (const key of ['ARRANGE', 'BINARY']) {
+  // marks a correctly-reasoning student wrong. Every set that HAS a solution space
+  // gets this check.
+  for (const key of ['ARRANGE', 'BINARY', 'GAMES', 'SCHEDULE']) {
     const solutions = setByKey[key].solve();
     assert(solutions.length === 1,
       `${key}: expected exactly 1 solution, found ${solutions.length} — an ambiguous set must not ship`);
-    console.log(`  ok  ${key.padEnd(9)} unique solution: ${JSON.stringify(solutions[0])}`);
+    const shown = key === 'GAMES'
+      ? JSON.stringify(solutions[0].results)
+      : JSON.stringify(solutions[0]);
+    console.log(`  ok  ${key.padEnd(9)} unique solution: ${shown}`);
   }
-  // The caselet is arithmetic over declared data; there is nothing to be ambiguous.
+
+  // These two are arithmetic over declared data — nothing to be ambiguous about, but
+  // their internal consistency is still worth confirming.
   console.log(`  ok  CASELET   totals ${CASELET.data.shops.map(s => `${s}=${CASELET.total(s)}`).join(' ')}`);
+
+  // The Venn regions must partition the surveyed population exactly, or the figures
+  // are mutually inconsistent and every answer derived from them is wrong.
+  const parts = VENN.exactlyOne() + VENN.exactlyTwo() + VENN.d.HEM + VENN.none();
+  assert(parts === VENN.d.total,
+    `VENN: regions sum to ${parts} but the survey covered ${VENN.d.total} — the figures are inconsistent`);
+  console.log(`  ok  VENN      regions partition all ${VENN.d.total}: `
+    + `${VENN.exactlyOne()} one, ${VENN.exactlyTwo()} two, ${VENN.d.HEM} three, ${VENN.none()} none`);
+
+  // Every town must be reachable, or a shortest-path question has no answer.
+  const towns = [...new Set(NETWORK.edges.flatMap(([a, b]) => [a, b]))];
+  for (const t of towns) {
+    const d = NETWORK.shortest('A', t).distance;
+    assert(Number.isFinite(d), `NETWORK: town ${t} is unreachable from A`);
+  }
+  console.log(`  ok  NETWORK   all ${towns.length} towns reachable; A→F = ${NETWORK.shortest('A','F').distance} km`);
   console.log('');
 
   const seenStems = new Set();
@@ -403,19 +729,38 @@ function verifyContent() {
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
 
-const PAPER = {
-  code: 'ASHA.PRACTICE.DILR.01',
-  title: 'ASHA Practice — DILR 1',
-  description:
-    'Three sets of four questions: an arrangement, a truth-teller puzzle, and a '
-    + 'data caselet. Shorter than a real DILR section, which runs 22 questions in 40 '
-    + 'minutes across five sets.',
-  is_full_mock: false,
-  // 12 questions at 120 s — slightly above CAT's 109 s average, because a set must
-  // be read and cracked before any of its questions can be answered.
-  time_limit_min: 24,
-  active: true,
-};
+/**
+ * Papers are assembled from the set pool, so adding one is data rather than code.
+ * `sets` names the keys, in the order they should appear.
+ *
+ * Times run at ~120 s/question, slightly above CAT's 109 s average, because a DILR
+ * set has to be read and cracked before any of its questions can be answered.
+ */
+const PAPERS = [
+  {
+    code: 'ASHA.PRACTICE.DILR.01',
+    title: 'ASHA Practice — DILR 1',
+    description:
+      'Three sets: an arrangement, a truth-teller puzzle and a data caselet. Shorter '
+      + 'than a real DILR section, which runs 22 questions in 40 minutes across five sets.',
+    is_full_mock: false,
+    time_limit_min: 24,
+    active: true,
+    sets: ['ARRANGE', 'BINARY', 'CASELET'],
+  },
+  {
+    code: 'ASHA.PRACTICE.DILR.02',
+    title: 'ASHA Practice — DILR 2',
+    description:
+      'Four fresh sets: a round robin, a scheduling problem, a three-way Venn and a '
+      + 'road network. Different set shapes from DILR 1, which is the point — set '
+      + 'selection is a skill about recognising shapes.',
+    is_full_mock: false,
+    time_limit_min: 32,
+    active: true,
+    sets: ['GAMES', 'SCHEDULE', 'VENN', 'NETWORK'],
+  },
+];
 
 async function main() {
   verifyContent();
@@ -489,60 +834,94 @@ async function main() {
   }
   console.log(`items:  ${itemIds.length} written`);
 
-  const { data: paper, error: pe } = await db.from('practice_papers')
-    .upsert({ ...PAPER, source_id: source.id, exam_id: exam.id }, { onConflict: 'code' })
-    .select().single();
-  if (pe) throw pe;
+  // Which item ids belong to which set, so a paper can pick whole sets.
+  const idsBySet = {};
+  QUESTIONS.forEach((q, i) => {
+    (idsBySet[q.set] ??= []).push(itemIds[i]);
+  });
 
-  for (const [i, id] of itemIds.entries()) {
-    const { error } = await db.from('paper_items').insert({
-      paper_id: paper.id, question_item_id: id,
-      section_id: section.id, question_number: i + 1,
-    });
-    if (error) throw error;
+  const seededPapers = [];
+  for (const spec of PAPERS) {
+    const { sets, ...paperRow } = spec;
+    const { data: paper, error: pe } = await db.from('practice_papers')
+      .upsert({ ...paperRow, source_id: source.id, exam_id: exam.id }, { onConflict: 'code' })
+      .select().single();
+    if (pe) throw pe;
+
+    // Questions are numbered set by set, so a paper never interleaves two exhibits —
+    // jumping between sets mid-paper is not how a real DILR section reads, and it
+    // would also make the fold-state behaviour pointless.
+    let number = 0;
+    for (const key of sets) {
+      for (const id of idsBySet[key]) {
+        number += 1;
+        const { error } = await db.from('paper_items').insert({
+          paper_id: paper.id, question_item_id: id,
+          section_id: section.id, question_number: number,
+        });
+        if (error) throw error;
+      }
+    }
+    console.log(`paper:  ${paper.code} — ${number} questions, ${paper.time_limit_min} min`);
+    seededPapers.push({ paper, count: number });
   }
-  console.log(`paper:  ${paper.code} — ${itemIds.length} questions, ${paper.time_limit_min} min`);
 
   // ─── Read back ─────────────────────────────────────────────────────────────
   console.log('\nverifying against the database...');
 
-  const { data: linked, error: le } = await db.from('paper_items')
-    .select('question_number, question_items(response_format, correct_option, correct_answer, options, stimulus_id, question_stimuli(kind, body, archetype_id))')
-    .eq('paper_id', paper.id).order('question_number');
-  if (le) throw le;
+  for (const { paper, count } of seededPapers) {
+    const { data: linked, error: le } = await db.from('paper_items')
+      .select('question_number, question_items(response_format, correct_option, correct_answer, options, stimulus_id, question_stimuli(kind, body, archetype_id))')
+      .eq('paper_id', paper.id).order('question_number');
+    if (le) throw le;
 
-  assert(linked.length === itemIds.length, `db items: expected ${itemIds.length}, found ${linked.length}`);
-  const numbers = linked.map(r => r.question_number);
-  assert(JSON.stringify(numbers) === JSON.stringify(numbers.map((_, i) => i + 1)),
-    `db numbering not gapless: ${numbers.join(',')}`);
-  console.log(`  ok  db items: ${linked.length}, gapless numbering`);
+    assert(linked.length === count,
+      `db ${paper.code}: expected ${count} items, found ${linked.length}`);
+    const numbers = linked.map(r => r.question_number);
+    assert(JSON.stringify(numbers) === JSON.stringify(numbers.map((_, i) => i + 1)),
+      `db ${paper.code} numbering not gapless: ${numbers.join(',')}`);
 
-  for (const row of linked) {
-    const q = row.question_items;
-    const stim = Array.isArray(q.question_stimuli) ? q.question_stimuli[0] : q.question_stimuli;
-    assert(q.stimulus_id && stim, `db Q${row.question_number}: no set attached`);
-    assert(stim.kind === 'set_data', `db Q${row.question_number}: stimulus kind is '${stim.kind}'`);
-    assert(stim.archetype_id !== null, `db Q${row.question_number}: set has no archetype tagged`);
-    // Line breaks must survive the round trip, or the runner renders a table as one
-    // unreadable run-on line.
-    assert(stim.body.includes('\n'), `db Q${row.question_number}: set data lost its line breaks`);
-    if (q.response_format === 'mcq') {
-      assert(q.correct_option >= 1 && q.correct_option <= q.options.length,
-        `db Q${row.question_number}: mcq key out of range`);
-    } else {
-      assert(typeof q.correct_answer === 'string' && q.correct_answer.length > 0,
-        `db Q${row.question_number}: tita has no answer`);
+    // Consecutive questions from one set must stay together. If a paper interleaved
+    // exhibits, the fold-state-per-passage behaviour would be useless and the paper
+    // would read nothing like a real section.
+    const order = linked.map(r => {
+      const q = r.question_items;
+      return Array.isArray(q.question_stimuli) ? q.question_stimuli[0] : q.question_stimuli;
+    }).map(s => s.archetype_id);
+    const distinct = [...new Set(order)];
+    const grouped = distinct.length === order.filter((v, i) => order[i - 1] !== v).length;
+    assert(grouped, `db ${paper.code}: questions from one set are not contiguous`);
+
+    for (const row of linked) {
+      const q = row.question_items;
+      const stim = Array.isArray(q.question_stimuli) ? q.question_stimuli[0] : q.question_stimuli;
+      assert(q.stimulus_id && stim, `db ${paper.code} Q${row.question_number}: no set attached`);
+      assert(stim.kind === 'set_data',
+        `db ${paper.code} Q${row.question_number}: stimulus kind is '${stim.kind}'`);
+      assert(stim.archetype_id !== null,
+        `db ${paper.code} Q${row.question_number}: set has no archetype tagged`);
+      // Line breaks must survive the round trip, or the runner renders a table as one
+      // unreadable run-on line.
+      assert(stim.body.includes('\n'),
+        `db ${paper.code} Q${row.question_number}: set data lost its line breaks`);
+      if (q.response_format === 'mcq') {
+        assert(q.correct_option >= 1 && q.correct_option <= q.options.length,
+          `db ${paper.code} Q${row.question_number}: mcq key out of range`);
+      } else {
+        assert(typeof q.correct_answer === 'string' && q.correct_answer.length > 0,
+          `db ${paper.code} Q${row.question_number}: tita has no answer`);
+      }
     }
+    console.log(`  ok  db ${paper.code}: ${count} items, ${distinct.length} sets, contiguous, all gradable`);
   }
-  console.log('  ok  db every question carries a set_data exhibit with an archetype');
-  console.log('  ok  db set data kept its line breaks');
-  console.log('  ok  db every item is gradable');
 
   console.log(
-    `\nseeded: ${SETS.length} original DILR sets and ${QUESTIONS.length} questions as `
-    + `"${paper.title}" (${paper.time_limit_min} min).\n`
-    + `Every key was computed by solving the set from scratch; both logic sets were\n`
-    + `asserted to have exactly one solution. DILR.SKILL.* is no longer reserved.`,
+    `\nseeded: ${SETS.length} original DILR sets and ${QUESTIONS.length} questions `
+    + `across ${seededPapers.length} papers:\n`
+    + seededPapers.map(({ paper, count }) =>
+        `  ${paper.title} — ${count} questions, ${paper.time_limit_min} min`).join('\n')
+    + `\nEvery key was computed by solving the set from scratch; all four logic sets\n`
+    + `were asserted to have exactly one solution.`,
   );
 }
 

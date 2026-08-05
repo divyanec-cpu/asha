@@ -2,6 +2,28 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-05 — Four more DILR sets: 7 of 12 archetypes covered
+
+**What changed**
+- **Four new original sets** — a four-team round robin (`GAMES`), a five-task schedule (`SCHEDULE`), a three-language Venn (`VENN`) and a six-town road network (`NETWORK`) — with 16 questions.
+- **A second paper, DILR 2** (16 questions, 32 min). DILR 1 is unchanged. The seed now holds a **set pool** and assembles papers from it, so adding a paper is data.
+- **87 distinct practice questions** across 6 papers now: QA 43, VARC 16, DILR 28.
+
+**DILR 2 uses deliberately different set shapes from DILR 1.** That is the point rather than variety for its own sake: set selection is a skill about recognising which shapes you are fast at, and a student who only ever meets arrangements and caselets never gets to find out.
+
+**Every new set carries its own solver, and every key is computed.** Round-robin results are found by enumerating all 3⁶ = 729 possible outcomes and keeping those that produce the stated points table; the schedule by enumerating all 120 orderings; the network by Dijkstra. All four logic sets across both papers are asserted to have **exactly one** solution.
+
+**Three new structural assertions**, each guarding something that would otherwise fail silently:
+- **Venn regions must partition the surveyed total exactly.** If the figures were mutually inconsistent, every answer derived from them would be wrong while each one looked individually plausible.
+- **Every town must be reachable** from A, or a shortest-path question has no answer at all.
+- **Questions from one set must be contiguous within a paper.** An interleaved paper would make the fold-state-per-exhibit behaviour pointless and would read nothing like a real section.
+
+**How to test it**
+1. `npm run seed:dilr` — four unique solutions reported, Venn partition confirmed (`55 one, 45 two, 10 three, 10 none`), network reachability confirmed, both papers contiguous.
+2. `/practice` → **DILR 2**. Verified at 360px: the points table, the conditions list, the Venn figures and the road table all fit without the page scrolling sideways.
+
+**Still open:** 5 of 12 archetypes have no content — chart interpretation, scatter/correlation, data sufficiency, team selection and the grid/quant hybrid. The first two are the awkward ones, since they lean on a graphic that text cannot honestly stand in for.
+
 ## 2026-08-05 — DILR: three original sets, and four taxonomy nodes come out of reserve
 
 **What changed**
