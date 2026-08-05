@@ -89,7 +89,19 @@ export default async function AttemptPage({
 
   const rows = (sections ?? []).map((s) => {
     const sa = (sectionAttempts ?? []).find((x) => x.section_id === s.id);
-    const isSetBased = setBased.has(s.id);
+    /*
+     * A PRACTICE RUN IS ALWAYS QUESTION-LEVEL, even for DILR.
+     *
+     * Elsewhere, DILR is set-based because the student is replaying a mock taken
+     * somewhere else: they never recorded per-question data, and the decision worth
+     * analysing is which sets they picked. Inside a practice run ASHA holds the
+     * questions and times each one, so it captures per-question outcomes AND the
+     * order they were worked in — strictly more than the logging flow can get.
+     *
+     * Without this, a DILR practice attempt would count `set_attempts` (of which it
+     * has none) and report "0 / 12 Q · BY SET" for a run that was in fact complete.
+     */
+    const isSetBased = !isPractice && setBased.has(s.id);
     const accounted = isSetBased
       ? (sets ?? [])
           .filter((r) => r.section_attempt_id === sa?.id)

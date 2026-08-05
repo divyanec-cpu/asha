@@ -57,7 +57,7 @@ export default async function PracticeRunPage({
   // Still NO correct_option, correct_answer or solution.
   const { data: items } = await supabase
     .from("paper_items")
-    .select("question_number, question_items(id, stem, response_format, options, stimulus_id, question_stimuli(title, body))")
+    .select("question_number, question_items(id, stem, response_format, options, stimulus_id, question_stimuli(title, body, kind))")
     .eq("paper_id", attempt.paper_id)
     .eq("section_id", sectionAttempt.section_id)
     .order("question_number");
@@ -70,7 +70,10 @@ export default async function PracticeRunPage({
         response_format: "mcq" | "tita";
         options: string[] | null;
         stimulus_id: string | null;
-        question_stimuli: { title: string | null; body: string } | { title: string | null; body: string }[] | null;
+        question_stimuli:
+          | { title: string | null; body: string; kind: string }
+          | { title: string | null; body: string; kind: string }[]
+          | null;
       } | null;
       if (!q) return null;
       const stim = one(q.question_stimuli);
@@ -86,6 +89,10 @@ export default async function PracticeRunPage({
         stimulusId: q.stimulus_id,
         stimulusTitle: stim?.title ?? null,
         stimulusBody: stim?.body ?? null,
+        // 'passage' renders as prose; 'set_data' keeps its line breaks and uses the
+        // mono face, because a DILR exhibit is usually a table or a list of
+        // conditions and prose reflow would destroy it.
+        stimulusKind: stim?.kind ?? null,
       };
     })
     .filter((q): q is NonNullable<typeof q> => q !== null);

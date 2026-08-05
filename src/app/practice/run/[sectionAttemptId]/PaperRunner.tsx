@@ -39,6 +39,7 @@ type Question = {
   stimulusId: string | null;
   stimulusTitle: string | null;
   stimulusBody: string | null;
+  stimulusKind: string | null;
 };
 
 type Answer = {
@@ -409,22 +410,60 @@ export default function PaperRunner({
               className="flex w-full items-center justify-between px-3.5 py-2.5"
             >
               <span className="font-mono text-[10px] font-semibold tracking-[0.12em] text-brass">
-                {q.stimulusTitle ? q.stimulusTitle.toUpperCase() : "THE PASSAGE"}
+                {q.stimulusTitle
+                  ? q.stimulusTitle.toUpperCase()
+                  : q.stimulusKind === "set_data"
+                    ? "THE SET"
+                    : "THE PASSAGE"}
               </span>
               <span className="ml-2 font-mono text-[10px] font-semibold tracking-[0.06em] text-mute-500">
                 {collapsed.has(q.stimulusId) ? "SHOW" : "HIDE"}
               </span>
             </button>
+            {/*
+              A DILR exhibit is a table or a list of conditions, where the line
+              breaks ARE the structure — reflowing it as prose would destroy the
+              alignment and make the set unreadable. So set data keeps its
+              whitespace and takes the mono face (which is also the design system's
+              rule for anything numeric), and scrolls horizontally rather than
+              wrapping a table mid-row. Prose passages reflow as normal.
+            */}
             {!collapsed.has(q.stimulusId) && (
-              <div className="max-h-[42vh] overflow-y-auto border-t border-paper/[0.12] px-3.5 py-3">
-                {q.stimulusBody.split("\n\n").map((para, i) => (
-                  <p
-                    key={i}
-                    className="mb-2.5 text-[13.5px] leading-relaxed text-paper/90 text-pretty last:mb-0"
-                  >
-                    {para}
-                  </p>
-                ))}
+              <div
+                className={`max-h-[42vh] overflow-y-auto border-t border-paper/[0.12] px-3.5 py-3 ${
+                  q.stimulusKind === "set_data" ? "overflow-x-auto" : ""
+                }`}
+              >
+                {q.stimulusBody.split("\n\n").map((block, i) => {
+                  /*
+                   * Only blocks the author put LINE BREAKS in are structural — a
+                   * table, or a numbered list of conditions — and those must keep
+                   * their whitespace. A prose block inside a set (the sentence
+                   * introducing the table) has no internal breaks and must wrap
+                   * normally.
+                   *
+                   * Rendering every block of a set as <pre> was the first attempt,
+                   * and at 360px it made the intro sentence 655px wide: you had to
+                   * scroll sideways to read an English sentence. The page body never
+                   * scrolled, so it looked contained — it was simply unreadable.
+                   */
+                  const isStructural = q.stimulusKind === "set_data" && block.includes("\n");
+                  return isStructural ? (
+                    <pre
+                      key={i}
+                      className="mb-3 overflow-x-auto whitespace-pre font-mono text-[12px] leading-relaxed text-paper/90 last:mb-0"
+                    >
+                      {block}
+                    </pre>
+                  ) : (
+                    <p
+                      key={i}
+                      className="mb-2.5 text-[13.5px] leading-relaxed text-paper/90 text-pretty last:mb-0"
+                    >
+                      {block}
+                    </p>
+                  );
+                })}
               </div>
             )}
           </div>

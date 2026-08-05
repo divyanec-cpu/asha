@@ -2,6 +2,28 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-05 — DILR: three original sets, and four taxonomy nodes come out of reserve
+
+**What changed**
+- **`scripts/seed-practice-dilr.mjs`** and **`npm run seed:dilr`** — three original sets (an arrangement, a truth-teller puzzle, a data caselet) with 12 questions. One paper: **DILR 1**, 12 questions, 24 minutes.
+- **Set exhibits render with their structure intact** — tables and condition lists keep their line breaks and use IBM Plex Mono; prose inside a set still wraps.
+- **`DILR.SKILL.*` is no longer reserved.** All four skill leaves now carry questions.
+
+**Practice DILR is question-level, and that is a deliberate difference from the logging flow.** Elsewhere DILR is recorded at set level, because the student is replaying a mock taken somewhere else and never captured per-question data — the decision worth analysing is which sets they picked. Inside a practice run ASHA holds the questions and times each one, so it captures per-question outcomes *and* working order: strictly more than the logging flow can obtain. The archetype is still recorded, on the exhibit rather than on a `set_attempts` row, so the set-selection playbook's raw material is not lost.
+
+That un-reserves `DILR.SKILL.CALC / COUNT / DEDUCE / READ`, which `data-model.md` has listed as reserved since v1 on the grounds that "no DILR question rows exist to carry a skill tag". These are the first that do.
+
+**Every DILR key is computed by solving the set from scratch**, and both logic sets are asserted to have exactly **one** solution. This caught a genuine error: the first version of the arrangement's "what if" question had **two** valid seatings, and the hand-written explanation had confidently described a single one. An ambiguous set is worse than a wrong one — it looks fine and marks a correctly-reasoning student wrong.
+
+**Two rendering problems found by testing at 360px, not by reading the code.** First, the attempt page reported a finished DILR practice run as `0 / 22 Q · BY SET`, because it counts `set_attempts` for any section owning archetypes — of which a practice run has none. Second, rendering *every* block of a set as `<pre>` made the sentence introducing the table 655px wide at 360px: the page body never scrolled, so it looked contained, but you had to scroll sideways to read an English sentence. Only blocks the author put line breaks in are now treated as structural.
+
+**How to test it**
+1. `npm run seed:dilr` — both logic sets solved and asserted unique, every key computed, all 4 skills confirmed covered.
+2. `/practice` → **DILR 1** → start. The exhibit appears above question 1; question 9's table stays column-aligned at 360px while its intro sentence wraps.
+3. Submit. The result page reads `12 / 12 Q · BY QUESTION`, not `BY SET`.
+
+**A build note, not a code problem:** `npm run build` panicked with a Turbopack `connection forcibly closed` error in the CSS worker while `next dev` was running against the same `.next` directory. Stopping the dev server first fixed it.
+
 ## 2026-08-04 — VARC: passages on screen, and 16 original VARC questions
 
 **What changed**

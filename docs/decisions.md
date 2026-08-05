@@ -2,6 +2,34 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-05 — DILR practice is question-level, unlike DILR logging
+
+The two flows record different things because they *can* record different things, and the difference is worth stating rather than looking like an inconsistency.
+
+**Logging a mock:** the student took it elsewhere, captured nothing per question, and the decision worth analysing is which of the five sets they picked and which they walked past. Hence `set_attempts`, and hence the set-selection engine.
+
+**A practice run:** ASHA holds the questions and runs the clock, so it records per-question correctness, per-question time, and the order actually worked in. That is strictly more information, so practice DILR is question-level and each question carries a `DILR.SKILL.*` tag.
+
+The archetype is not lost — it lives on the `question_stimuli` exhibit rather than a `set_attempts` row, so the playbook's raw material survives.
+
+**This un-reserves four taxonomy nodes.** `DILR.SKILL.*` had been reserved since v1 for a good reason ("no DILR question rows exist to carry a skill tag"). Practice rows are the first that ever will.
+
+### Uniqueness is asserted, and it caught a real error
+
+Unlike RC, DILR answers are not judgement calls: a well-made set has exactly one solution and finding it is mechanical. So each set carries a `solve()` that enumerates the whole possibility space, and the seed asserts the solution is **unique** before deriving any answer from it.
+
+That immediately caught a mistake. The arrangement set's "what if" question originally varied condition (iii), and the altered set had **two** valid seatings — while the explanation I had written described a single one with complete confidence. **An ambiguous set is worse than a wrong one**: it looks fine, and it marks a correctly-reasoning student wrong. The question now varies condition (i) instead, and the solver confirms that stays unique.
+
+The "what if" answers are computed by re-running the solver against the altered conditions, so they are as trustworthy as the base ones.
+
+### Two problems that only appeared at 360px
+
+Both were found by testing rather than by reading the code, and neither would have shown on a desktop viewport.
+
+**The attempt page called a finished DILR practice run `0 / 22 Q · BY SET`.** It decides set-based vs question-based by whether the section owns archetype nodes — correct for a logged mock, wrong for a practice run, which writes question rows and no set rows. A practice attempt is now always question-counted.
+
+**Rendering every block of a set as `<pre>` made prose unreadable.** The sentence introducing the caselet table came out 655px wide at a 360px viewport. The page body never scrolled sideways, so it *looked* contained — you simply had to scroll horizontally to read an English sentence. Only blocks the author put line breaks into are structural now; a block without them is prose and wraps. The rule generalises: if the author put a line break there, it means something.
+
 ## 2026-08-04 — VARC, and being honest that two kinds of answer key are not equally sound
 
 Adding VARC needed code before content: `question_stimuli` had existed since `0009`, but the run page never selected or rendered it, so a passage-based question was unanswerable.

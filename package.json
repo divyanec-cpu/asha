@@ -13,6 +13,7 @@
     "seed:gmat-mat": "node --env-file=.env.local scripts/seed-gmat-mat.mjs",
     "seed:practice": "node --env-file=.env.local scripts/seed-practice-qa.mjs",
     "seed:varc": "node --env-file=.env.local scripts/seed-practice-varc.mjs",
+    "seed:dilr": "node --env-file=.env.local scripts/seed-practice-dilr.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "android:sync": "cap sync android",
     "android:open": "cap open android",

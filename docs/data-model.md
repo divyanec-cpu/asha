@@ -113,7 +113,11 @@ Descriptive counts of what the student logged ("you attempted 4 DILR sets and cl
 Defined and seeded, but nothing reads them in v1. Listed so no one wires a UI to an empty source:
 
 - **`revision_queue`** — the Leitner layer, v2 at the earliest.
-- **`DILR.SKILL.*`** (4 taxonomy nodes) — DILR is logged at set level in v1, so no DILR question rows exist to carry a skill tag. The quadrant therefore covers VARC and QA question types only, which matches the design.
+- ~~**`DILR.SKILL.*`** (4 taxonomy nodes)~~ — **no longer reserved as of 2026-08-05.** The original reason was sound: DILR is logged at set level, so no DILR question rows existed to carry a skill tag. **Practice DILR changed that.** Inside a practice run ASHA holds the questions and times each one, so it records per-question outcomes and working order — strictly more than the logging flow can obtain. All four skill leaves now carry questions.
+
+  The archetype is still recorded for a practice set, on the `question_stimuli` exhibit (`kind = 'set_data'`, `archetype_id`) rather than on a `set_attempts` row, so the set-selection playbook's raw material survives.
+
+  **Consequence for the attempt page:** it decides set-based vs question-based by whether a section owns `set_archetype` nodes, which is right for a logged mock and wrong for a practice run. A practice attempt is now always question-counted; without that, a finished DILR practice run reported `0 / 22 Q · BY SET`.
 - **`mock_attempts.timing_source = 'measured'`** — impossible until the v3 in-app timer.
 - **`question_attempts.order_index`** — see the caveat above.
 - **`exams` rows for GMAT and MAT** — seeded 2026-08-03 with their configs, sections and taxonomies, but **`active = false`**, so the only UI that reads them is the profile form's "soon" chip list. Everything downstream of them — 8 sections, 90 taxonomy nodes, both marking configs — is unread until `active` is flipped.
