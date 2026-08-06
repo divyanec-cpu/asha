@@ -2,6 +2,22 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-06 — Practice data feeds the analytics, on a line that can be defended
+
+The open question is settled. Two questions, two different answers.
+
+**Scores: practice never enters, full mock or not.** ASHA's paper is not calibrated against SimCAT's, so putting its total in the same series would compute "+8.7 vs your last three" across incomparable things, and would inflate the mock count behind the confidence chip — telling a student their readings were firmer for having practised. `mocks`, `sections`, the trend and the count stay logged-mocks-only.
+
+**Per-question data: a completed FULL MOCK is admitted.** Accuracy by question type is a ratio, not a total, so the out-of-42-versus-out-of-204 objection does not apply; the taxonomy is identical; and the timings are `measured` rather than recalled, which is *better* evidence than a logged mock can offer.
+
+**Partial practice sets stay out, and not from squeamishness.** They are deliberately skewed — the coverage set easy by design, the challenge set hard by design — so including them would bias per-type accuracy in a direction depending on which set the student happened to pick. **A skew that varies by choice cannot be fixed by labelling it.** That is why the line is the full mock: three sections, full difficulty spread, one unit of work.
+
+**The blend is stated, not assumed harmless.** `practiceMockCount` is surfaced on the home chip and the Trends header, because a per-type figure resting partly on ASHA's own questions is defensible only if that is visible.
+
+**Two coherence bugs this exposed, both fixed.** Home told a student who had sat a full ASHA mock that ASHA "has none yet" — flatly untrue once their 66 questions were in the loader. And Trends gated its whole body on logged mocks, so the new home copy pointed at a tab that showed nothing. Both now branch on either source.
+
+**Verified end to end** by sitting a full 66-question ASHA mock on an account with zero logged mocks: Trends reads `1 ASHA mock · timing measured`, **calibration counts its confidence tags at 11/30**, while score band and pacing stay correctly locked — those need logged mocks and say so. Every threshold still applies; nothing below one renders.
+
 ## 2026-08-06 — Full-length mocks: VARC to 24, multi-section runs, and ASHA Mock 1
 
 **What changed**

@@ -56,14 +56,39 @@ export default async function Page() {
       <main className="flex min-h-dvh flex-col bg-ink">
         <Header initials={initials} chip={<Chip tone="muted">NOTHING LOGGED YET</Chip>} />
         <Sheet>
+          {/*
+            Two different empty states. Someone who has sat an ASHA mock is NOT
+            starting from nothing — they have per-type readings — and telling them
+            "it has none yet" would be plainly untrue. What they lack is a score
+            trend, which only logged mocks can give, so that is what the copy asks
+            for.
+          */}
           <div className="rounded-[14px] border border-ink/[0.1] bg-white p-5">
-            <div className="text-[17px] font-semibold leading-snug text-ink text-pretty">
-              Two ways to start.
-            </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-[#6B6659] text-pretty">
-              ASHA reads your own attempt data, and it has none yet. Log a mock you have already
-              taken, or sit one of ASHA&rsquo;s own practice papers here.
-            </p>
+            {data.practiceMockCount > 0 ? (
+              <>
+                <div className="text-[17px] font-semibold leading-snug text-ink text-pretty">
+                  {data.practiceMockCount === 1
+                    ? "You've sat one ASHA mock. Now log a real one."
+                    : `You've sat ${data.practiceMockCount} ASHA mocks. Now log a real one.`}
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-[#6B6659] text-pretty">
+                  Your question-type and timing readings already include those, and they are on the
+                  Trends tab. What they cannot give you is a score trend — ASHA&rsquo;s paper
+                  isn&rsquo;t calibrated against SimCAT&rsquo;s, so those scores are deliberately
+                  kept out of it.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-[17px] font-semibold leading-snug text-ink text-pretty">
+                  Two ways to start.
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-[#6B6659] text-pretty">
+                  ASHA reads your own attempt data, and it has none yet. Log a mock you have already
+                  taken, or sit one of ASHA&rsquo;s own practice papers here.
+                </p>
+              </>
+            )}
           </div>
           {unfinished.length > 0 && <ResumeCard attempt={unfinished[0]} />}
 
@@ -172,6 +197,14 @@ export default async function Page() {
             {mocks.length} {mocks.length === 1 ? "MOCK" : "MOCKS"} ·{" "}
             {gc.label === "none" ? "NO CONFIDENT READING YET" : `${gc.label.toUpperCase()} CONFIDENCE`}
             {gc.timingIsEstimated && " · TIMING = YOUR ESTIMATES"}
+            {/*
+              Per-type readings may include full mocks sat in ASHA, whose questions
+              are ASHA's own and therefore not calibrated against a mock provider's.
+              The blend is stated rather than assumed harmless — and note it is NOT
+              added to the mock count beside it, because those scores stay out.
+            */}
+            {data.practiceMockCount > 0 &&
+              ` · +${data.practiceMockCount} ASHA ${data.practiceMockCount === 1 ? "MOCK" : "MOCKS"} IN TYPE READINGS`}
           </Chip>
         }
       />

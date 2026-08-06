@@ -39,14 +39,21 @@ export default async function TrendsPage() {
           TRENDS &amp; DIAGNOSTICS
         </div>
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute-300 text-pretty">
-          {mocks.length === 0
+          {mocks.length === 0 && data.practiceMockCount === 0
             ? "Nothing logged yet."
-            : `${mocks.length} ${mocks.length === 1 ? "mock" : "mocks"} · all timing is your recall, entered in buckets`}
+            : [
+                mocks.length > 0
+                  ? `${mocks.length} ${mocks.length === 1 ? "mock" : "mocks"} · timing is your recall`
+                  : null,
+                data.practiceMockCount > 0
+                  ? `${data.practiceMockCount} ASHA ${data.practiceMockCount === 1 ? "mock" : "mocks"} · timing measured`
+                  : null,
+              ].filter(Boolean).join(" · ")}
         </p>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-4 pt-4">
-        {mocks.length === 0 ? (
+        {mocks.length === 0 && data.practiceMockCount === 0 ? (
           <div className="rounded-[14px] border border-ink/[0.1] bg-white p-5">
             <div className="text-[16px] font-semibold leading-snug text-ink">
               Nothing to plot yet.

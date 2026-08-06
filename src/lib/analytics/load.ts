@@ -30,6 +30,16 @@ export type AnalyticsData = {
   providers: number;
   /** Attempts started but not finished. Surfaced so home can nudge. */
   unfinished: { id: string; title: string }[];
+  /**
+   * Completed full-length mocks sat inside ASHA, whose per-question rows are in
+   * `questions` but whose scores are deliberately absent from `mocks`.
+   *
+   * Surfaced so a screen can SAY when a per-type reading rests partly on ASHA's own
+   * questions. That matters: ASHA's paper is not calibrated against a mock
+   * provider's, so a blended accuracy figure is defensible only if the blend is
+   * visible. Zero for a student who has only logged real mocks.
+   */
+  practiceMockCount: number;
 };
 
 export async function loadAnalyticsData(): Promise<AnalyticsData | null> {
@@ -42,31 +52,44 @@ export async function loadAnalyticsData(): Promise<AnalyticsData | null> {
   const { data: attempts } = await supabase
     .from("mock_attempts")
     .select(
-      "id, taken_on, total_score, timing_source, is_complete, paper_id, mock_sources(title, provider), exam_configs(mark_correct, mark_wrong_mcq, mark_wrong_numeric)",
+      "id, taken_on, total_score, timing_source, is_complete, paper_id, mock_sources(title, provider), practice_papers(is_full_mock), exam_configs(mark_correct, mark_wrong_mcq, mark_wrong_numeric)",
     )
     .order("taken_on");
 
   /*
-   * PRACTICE ATTEMPTS ARE EXCLUDED FROM THE CROSS-MOCK ANALYTICS.
+   * WHERE PRACTICE DATA IS ALLOWED, AND WHERE IT IS NOT. (Decided 2026-08-06.)
    *
-   * An attempt with a `paper_id` was taken inside ASHA against a practice paper.
-   * The 14-question QA set scores out of 42; a CAT mock scores out of 204. Letting
-   * one into this series would put a 5 next to a 118 and then compute "+8.7 vs your
-   * last three" across both — a number with no meaning, of exactly the kind the
-   * derived-measures rule exists to prevent. It would also inflate the mock count
-   * that drives the global confidence chip, so a student would be told their
-   * readings were firmer because they had done a short practice set.
+   * Two different questions, and they get different answers.
    *
-   * This is conservative on purpose. The question-level data from a practice run —
-   * measured timings, accuracy by question type, confidence — is genuinely useful
-   * and is all stored. Whether to blend it into the per-type analytics is a real
-   * decision with a real trade-off (ASHA's own questions are not calibrated against
-   * a mock provider's), and it belongs to the builder, not to a default chosen here.
-   * Until then: practice results are shown for the run itself, and kept out of any
-   * claim about how the student is doing across mocks.
+   * SCORES — practice never enters, full mock or not. ASHA's own paper is not
+   * calibrated against SimCAT's, so putting its total in the same series would make
+   * "+8.7 vs your last three" a number computed across incomparable things. It would
+   * also inflate the mock count behind the global confidence chip, telling a student
+   * their readings were firmer for having practised. So `mocks`, `sections` and
+   * everything derived from them stay logged-mocks-only.
+   *
+   * PER-QUESTION DATA — a COMPLETED FULL MOCK is admitted. Accuracy by question
+   * type is a ratio, not a total, so the out-of-42-versus-out-of-204 objection does
+   * not apply; the taxonomy is the same; and the timings are `measured` rather than
+   * recalled, which is better evidence than a logged mock can offer.
+   *
+   * PARTIAL PRACTICE SETS ARE STILL EXCLUDED, and the reason is not squeamishness.
+   * They are deliberately skewed — the coverage set is easy by design, the challenge
+   * set hard by design — so including them would bias per-type accuracy in a
+   * direction that depends on which set the student happened to pick. A skew that
+   * varies by choice cannot be corrected by labelling it, which is why the line is
+   * drawn at the full mock: three sections, full difficulty spread, one unit of work.
    */
-  const all = (attempts ?? []).filter((a) => a.paper_id === null);
+  type PaperFlag = { is_full_mock: boolean } | { is_full_mock: boolean }[] | null;
+  const isFullMock = (a: { paper_id: string | null; practice_papers: PaperFlag }) =>
+    a.paper_id !== null && one(a.practice_papers)?.is_full_mock === true;
+
+  const everything = attempts ?? [];
+  const all = everything.filter((a) => a.paper_id === null);
   const complete = all.filter((a) => a.is_complete);
+
+  // Completed ASHA mocks: per-question data only.
+  const practiceMocks = everything.filter((a) => a.is_complete && isFullMock(a));
 
   // Marking scheme from the most recent attempt's config. Never hardcoded: a
   // pattern change is a data edit (CLAUDE.md rule 7).
@@ -89,16 +112,23 @@ export async function loadAnalyticsData(): Promise<AnalyticsData | null> {
     .filter((a) => !a.is_complete)
     .map((a) => ({ id: a.id, title: one(a.mock_sources)?.title ?? "Untitled mock" }));
 
-  if (mocks.length === 0) {
-    return { mocks, sections: [], sets: [], questions: [], scheme, providers: 0, unfinished };
+  // A student who has only sat ASHA mocks still has per-question data worth
+  // reading, so the early return waits until BOTH sources are empty.
+  if (mocks.length === 0 && practiceMocks.length === 0) {
+    return { mocks, sections: [], sets: [], questions: [], scheme, providers: 0, unfinished, practiceMockCount: 0 };
   }
 
   const mockIds = mocks.map((m) => m.id);
+  const practiceIds = practiceMocks.map((a) => a.id);
+  // Section attempts are fetched for both, then split: `sections` (which carries
+  // scores and pacing) keeps only the logged mocks, while question rows take both.
+  const analysableIds = [...mockIds, ...practiceIds];
+  const loggedMockIds = new Set(mockIds);
 
   const { data: sectionAttempts } = await supabase
     .from("section_attempts")
     .select("id, mock_attempt_id, score, quarter_marks, sections(code, ordinal)")
-    .in("mock_attempt_id", mockIds);
+    .in("mock_attempt_id", analysableIds);
 
   // Sort by the section's own ordinal. PostgREST returns `in()` results in no
   // guaranteed order, which rendered the score cards as DILR / VARC / QA — not
@@ -113,17 +143,22 @@ export async function loadAnalyticsData(): Promise<AnalyticsData | null> {
   const mockOf = new Map(sa.map((s) => [s.id, s.mock_attempt_id]));
   const codeOf = new Map(sa.map((s) => [s.id, one(s.sections)?.code ?? "?"]));
 
-  const sections: SectionRow[] = sa.map((s) => ({
-    mockId: s.mock_attempt_id,
-    sectionCode: one(s.sections)?.code ?? "?",
-    score: s.score === null ? null : Number(s.score),
-    quarterMarks: s.quarter_marks as number[] | null,
-  }));
+  // Scores and pacing come from logged mocks ONLY. An ASHA mock's section score is
+  // not comparable to a SimCAT section score, and this array feeds the score cards
+  // and the pacing measure.
+  const sections: SectionRow[] = sa
+    .filter((s) => loggedMockIds.has(s.mock_attempt_id))
+    .map((s) => ({
+      mockId: s.mock_attempt_id,
+      sectionCode: one(s.sections)?.code ?? "?",
+      score: s.score === null ? null : Number(s.score),
+      quarterMarks: s.quarter_marks as number[] | null,
+    }));
 
   // Guard against an empty `in()`, which PostgREST treats as matching nothing —
   // harmless here, but an explicit early return is clearer than a sentinel uuid.
   if (saIds.length === 0) {
-    return { mocks, sections, sets: [], questions: [], scheme, providers: 0, unfinished };
+    return { mocks, sections, sets: [], questions: [], scheme, providers: 0, unfinished, practiceMockCount: practiceMocks.length };
   }
 
   const [{ data: setRows }, { data: questionRows }] = await Promise.all([
@@ -184,5 +219,14 @@ export async function loadAnalyticsData(): Promise<AnalyticsData | null> {
     complete.map((a) => one(a.mock_sources)?.provider).filter(Boolean),
   ).size;
 
-  return { mocks, sections, sets, questions, scheme, providers, unfinished };
+  return {
+    mocks,
+    sections,
+    sets,
+    questions,
+    scheme,
+    providers,
+    unfinished,
+    practiceMockCount: practiceMocks.length,
+  };
 }
