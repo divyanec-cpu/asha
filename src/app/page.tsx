@@ -58,19 +58,44 @@ export default async function Page() {
         <Sheet>
           <div className="rounded-[14px] border border-ink/[0.1] bg-white p-5">
             <div className="text-[17px] font-semibold leading-snug text-ink text-pretty">
-              You&rsquo;ve taken the mock. Now log it.
+              Two ways to start.
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-[#6B6659] text-pretty">
-              ASHA reads your own attempt data — it has none yet. The first mock takes about ten
-              minutes to log, and the first readings you can trust arrive around the third.
+              ASHA reads your own attempt data, and it has none yet. Log a mock you have already
+              taken, or sit one of ASHA&rsquo;s own practice papers here.
             </p>
           </div>
           {unfinished.length > 0 && <ResumeCard attempt={unfinished[0]} />}
+
+          {/*
+            Both paths are offered because both put data in, and until practice
+            content existed only one of them did. Logging leads, because it is what
+            the cross-mock readings are built from — and the practice card says
+            plainly that its runs do not feed those readings, rather than letting a
+            new student assume they will.
+          */}
           <Link
             href="/log/new"
             className="mt-1 rounded-[13px] bg-brass py-4 text-center text-[15px] font-semibold text-white"
           >
-            Log your first mock
+            Log a mock you&rsquo;ve taken
+          </Link>
+          <p className="mt-1.5 text-center font-mono text-[10px] leading-relaxed tracking-[0.04em] text-[#8A8578]">
+            ABOUT TEN MINUTES · THE READINGS YOU CAN TRUST ARRIVE AROUND THE THIRD
+          </p>
+
+          <Link
+            href="/practice"
+            className="mt-3 block rounded-[13px] border border-ink/[0.14] bg-white px-4 py-3.5"
+          >
+            <span className="block text-[14px] font-semibold text-ink">
+              Or practise here, right now
+            </span>
+            <span className="mt-1 block text-[12.5px] leading-relaxed text-[#6B6659] text-pretty">
+              Questions ASHA wrote itself, timed and marked on the spot. You get a scored paper and
+              measured timings — but practice stays out of your mock count and your trend, so it
+              is not a substitute for logging real mocks.
+            </span>
           </Link>
           <div className="mt-auto">
             <BottomNav active="home" />

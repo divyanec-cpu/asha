@@ -2,6 +2,25 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-06 — A laptop layout for the runner, and an entry screen that admits practice exists
+
+**What changed**
+- **The practice runner is no longer phone-only.** It caps its width and, from `lg` up, puts the exhibit *beside* the question instead of above it, with the exhibit sticky so it stays put while the question column scrolls.
+- **The empty-state home offers both paths.** It previously said "You've taken the mock. Now log it." with a single button.
+
+**Why the runner breaks the phone-first rule, deliberately.** CLAUDE.md designs at 390px because logging a mock is an evening, ten-minute, on-the-sofa activity. Sitting a 40-minute timed paper is not — it is done at a desk. On a laptop a single 360px column wasted most of the screen and forced scrolling between the passage and the options on *every* question, which in a run whose entire purpose is measured timing would put the interface into the measurement. Nothing below `lg` changes.
+
+**The entry screen was incoherent and it was worth flagging.** A brand-new user was told the only thing they could do was log a mock they had already sat, while 107 questions across 7 papers sat one screen away, unmentioned. It now offers both, with logging leading.
+
+**The practice card says what practice does NOT do.** It states plainly that runs stay out of the mock count and the trend. That wording is load-bearing: practice data currently feeds no analytic, so promising insight from it would be an overclaim — and it points at a decision that is now blocking (see below).
+
+**Verified**
+- At **1440×900**: exhibit `144→706`, question `734→1296` — genuinely side by side, no page side-scroll.
+- At **360×800**: still stacked, full width, no side-scroll. No regression.
+- The empty state rendered on a real account with zero mocks, showing both paths.
+
+**Now blocking, not merely open:** whether practice question-level data feeds the per-type analytics. A new student can now generate measured, machine-graded attempt data in 25 minutes — and nothing reads it. Until that is decided, practice and insight are two products in one app.
+
 ## 2026-08-05 — All 12 DILR archetypes, and charts that are actually charts
 
 **What changed**

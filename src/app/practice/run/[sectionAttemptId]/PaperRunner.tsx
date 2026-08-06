@@ -335,8 +335,27 @@ export default function PaperRunner({
   const a = answers[current - 1];
   const urgent = clock.urgent;
 
+  /*
+   * LAYOUT NOTE — this screen is the one place ASHA is not phone-first.
+   *
+   * The rest of the app is built for a phone because logging a mock is an evening,
+   * ten-minute, on-the-sofa activity. Sitting a 40-minute timed paper is not: it is
+   * done at a desk, and on a laptop a single 360px column would waste most of the
+   * screen and force the student to scroll between the passage and the options on
+   * every question — which, in a run whose whole purpose is measured timing, would
+   * put the interface into the measurement.
+   *
+   * So the runner caps its width and, from `lg` up, puts the exhibit beside the
+   * question rather than above it, with the exhibit sticky so it stays put while the
+   * question column moves. Below `lg` nothing changes.
+   */
+  const hasStimulus = q.stimulusBody !== null && q.stimulusId !== null;
+
   return (
-    <main className="safe-top safe-bottom flex min-h-dvh flex-col bg-ink px-5">
+    <main className="safe-top safe-bottom flex min-h-dvh flex-col items-center bg-ink px-5">
+      <div
+        className={`flex w-full flex-1 flex-col ${hasStimulus ? "max-w-xl lg:max-w-6xl" : "max-w-xl"}`}
+      >
       <div className="flex items-baseline justify-between">
         <div
           className={`tnum font-mono text-[34px] font-semibold leading-none ${
@@ -382,7 +401,7 @@ export default function PaperRunner({
         })}
       </div>
 
-      <div className="mt-5 flex-1">
+      <div className="mt-5 flex flex-1 flex-col">
         <div className="font-mono text-[10px] font-semibold tracking-[0.14em] text-brass">
           QUESTION {String(current).padStart(2, "0")}
           <span className="ml-2 text-mute-500">
@@ -390,15 +409,24 @@ export default function PaperRunner({
           </span>
         </div>
 
+        {/* Stacked on a phone; exhibit beside question from `lg` up. */}
+        <div
+          className={`mt-3 flex-1 ${
+            hasStimulus ? "lg:grid lg:grid-cols-2 lg:items-start lg:gap-7" : ""
+          }`}
+        >
         {/*
-          The shared passage, above the question that asks about it. Scrolls inside
-          its own box rather than pushing the options off the screen — on a 360px
-          viewport a 400-word passage is several screens tall, and having to scroll
-          past all of it to reach the answers on every question would make the
-          measured timings say more about the interface than about the reading.
+          The shared passage, above the question that asks about it on a phone and
+          beside it on a laptop. Either way it scrolls inside its own box rather than
+          pushing the options off the screen — on a 360px viewport a 400-word passage
+          is several screens tall, and having to scroll past all of it to reach the
+          answers on every question would make the measured timings say more about
+          the interface than about the reading.
         */}
+        {/* Written out rather than using `hasStimulus`, because TypeScript narrows
+            the nullable fields through this form and not through a boolean. */}
         {q.stimulusBody !== null && q.stimulusId !== null && (
-          <div className="mt-3 rounded-[12px] border border-paper/[0.16] bg-paper/[0.05]">
+          <div className="rounded-[12px] border border-paper/[0.16] bg-paper/[0.05] lg:sticky lg:top-4">
             <button
               type="button"
               onClick={() =>
@@ -432,7 +460,7 @@ export default function PaperRunner({
             */}
             {!collapsed.has(q.stimulusId) && (
               <div
-                className={`max-h-[42vh] overflow-y-auto border-t border-paper/[0.12] px-3.5 py-3 ${
+                className={`max-h-[42vh] overflow-y-auto border-t border-paper/[0.12] px-3.5 py-3 lg:max-h-[64vh] ${
                   q.stimulusKind === "set_data" ? "overflow-x-auto" : ""
                 }`}
               >
@@ -482,7 +510,9 @@ export default function PaperRunner({
           </div>
         )}
 
-        <p className="mt-3 text-[15px] leading-relaxed text-paper text-pretty">{q.stem}</p>
+        {/* The question column: stem, answer, confidence. */}
+        <div className={hasStimulus ? "lg:pt-0" : ""}>
+        <p className="mt-4 text-[15px] leading-relaxed text-paper text-pretty lg:mt-0">{q.stem}</p>
 
         {q.responseFormat === "mcq" ? (
           <div className="mt-4 flex flex-col gap-2">
@@ -554,10 +584,12 @@ export default function PaperRunner({
             })}
           </div>
         </div>
+        </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 pb-2 pt-5">
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-2 pb-2 pt-5 lg:flex-row-reverse lg:items-center lg:justify-between lg:gap-4">
+        <div className="flex gap-2 lg:w-[320px]">
           <button
             type="button"
             onClick={() => goTo(current - 1)}
@@ -578,10 +610,11 @@ export default function PaperRunner({
         <button
           type="button"
           onClick={finish}
-          className="rounded-[13px] bg-brass py-3.5 text-[14px] font-semibold text-white"
+          className="rounded-[13px] bg-brass py-3.5 text-[14px] font-semibold text-white lg:px-8 lg:py-3"
         >
           Submit and mark
         </button>
+      </div>
       </div>
     </main>
   );
