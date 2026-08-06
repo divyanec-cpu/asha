@@ -379,7 +379,10 @@ export default function PaperRunner({
   const hasStimulus = q.stimulusBody !== null && q.stimulusId !== null;
 
   return (
-    <main className="safe-top safe-bottom flex min-h-dvh flex-col items-center bg-ink px-5">
+    <main
+      data-wide
+      className="safe-top safe-bottom flex min-h-dvh flex-col items-center bg-ink px-5"
+    >
       <div
         className={`flex w-full flex-1 flex-col ${hasStimulus ? "max-w-xl lg:max-w-6xl" : "max-w-xl"}`}
       >

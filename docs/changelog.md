@@ -2,6 +2,18 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-06 — The whole app gets a laptop layout, not just the runner
+
+The earlier laptop work fixed one screen. Opening the sign-in page on a 1440px display showed the rest: the Send OTP button spanned **1840px** and the body copy ran as a single unreadable line, because all 21 `<main>` elements set their own width and none capped it.
+
+**Mobile-first should mean the phone layout is the floor, not that wider screens get the phone layout inflated.** Above 640px every screen is now a centred column of roughly phone width on an ink surround — which keeps the handoff design exactly as drawn (dark header, paper sheet, 26px radius) rather than inventing a second desktop design nobody specified.
+
+**One screen opts out.** The practice runner carries `data-wide`, because sitting a 40-minute paper genuinely wants the exhibit beside the question. That is the only place extra width does real work; everywhere else it would stretch a form.
+
+**Why a CSS rule on `main` rather than a wrapper in the root layout:** a max-width on a shared ancestor cannot be escaped from inside, so the runner could not have opted out of it. One rule plus one attribute covers all 21 screens.
+
+**Verified at 1440×900:** every page a 544px column centred at `448→992`; the runner still full-bleed with exhibit `144→706` beside question `734→1296`. **At 360×800:** unchanged, full-bleed `0→360`, no side-scroll — the media query starts at 640px, so phones never see it.
+
 ## 2026-08-06 — Practice data feeds the analytics, on a line that can be defended
 
 The open question is settled. Two questions, two different answers.

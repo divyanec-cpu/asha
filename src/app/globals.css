@@ -100,3 +100,38 @@ body {
 .safe-bottom {
   padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0px));
 }
+
+/*
+  ── Desktop: a centred column, not a stretched phone ─────────────────────────
+
+  ASHA is designed at 390px because logging a mock is a phone activity. But the
+  same CSS opened on a 1440px laptop stretched every screen edge to edge: the
+  sign-in button spanned 1840px and body copy ran as a single unreadable line.
+  Mobile-first should mean the phone layout is the FLOOR, not that wider screens
+  get the phone layout inflated.
+
+  So above the phone breakpoint every screen becomes a centred column of roughly
+  phone width, sitting on the ink surround. That keeps the handoff design exactly
+  as drawn — the dark header, the paper sheet, the 26px radius — rather than
+  inventing a second desktop design nobody specified.
+
+  ONE SCREEN OPTS OUT. The practice runner marks itself `data-wide`, because
+  sitting a 40-minute paper genuinely wants the exhibit beside the question
+  rather than above it. That is the only place where more width does real work;
+  everywhere else it would just stretch a form.
+
+  Applied to `main` rather than a wrapper in the root layout so a page can opt
+  out at all — a max-width on a shared ancestor is not escapable from inside.
+*/
+@media (min-width: 640px) {
+  main:not([data-wide]) {
+    margin-inline: auto;
+    max-width: 34rem;
+  }
+}
+
+/* The surround behind that column. Ink, so the gutters read as part of the
+   design rather than as an unstyled page. */
+body {
+  background-color: #12151a;
+}
