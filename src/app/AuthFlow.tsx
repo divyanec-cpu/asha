@@ -190,10 +190,21 @@ export default function AuthFlow() {
             Now find out where you stand.
           </h1>
 
+          {/*
+            This paragraph described a logging tool, which ASHA stopped being when
+            practice papers shipped. The refusals stay — they are the reason a
+            sceptical aspirant trusts the numbers — but "doesn't sell mocks" now
+            needs the distinction drawn, because ASHA does hand you questions: its
+            own, written for it, never a copy of anyone's paper.
+          */}
           <p className="text-[13.5px] leading-relaxed text-mute-500 text-pretty">
-            ASHA reads your own attempt data across every mock you log and tells you what to
-            change next &mdash; with the sample size behind every claim. It doesn&rsquo;t teach,
-            doesn&rsquo;t sell mocks, and doesn&rsquo;t rank you against anyone.
+            ASHA reads your own attempt data and tells you what to change next &mdash; with the
+            sample size behind every claim. Log the mocks you take elsewhere, or sit one of
+            ASHA&rsquo;s own timed papers here and have it marked on the spot.
+          </p>
+          <p className="text-[13.5px] leading-relaxed text-mute-500 text-pretty">
+            It doesn&rsquo;t teach, doesn&rsquo;t rank you against anyone, and never carries copies
+            of real exam papers &mdash; every question here was written for ASHA.
           </p>
         </div>
 

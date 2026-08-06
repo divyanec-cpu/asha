@@ -77,7 +77,8 @@ export default async function AccountPage() {
       </div>
 
       <p className="mt-6 text-[17px] leading-snug text-paper text-pretty">
-        An instrument, not a teacher. It reads your own mock data and tells you where you stand.
+        An instrument, not a teacher. It reads your attempt data — from mocks you log and papers
+        you sit here — and tells you where you stand.
       </p>
 
       <div className="my-5 h-px bg-paper/[0.14]" />
