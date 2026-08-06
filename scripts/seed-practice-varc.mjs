@@ -126,6 +126,17 @@ const PASSAGES = [
       'It is worth being precise about what did the work here. Nothing was discovered about trees that was not already known; the annual ring had been noticed by anyone who ever sawed a log. What changed was that a pattern previously seen as noise was recognised as signal, and that recognition converted an unremarkable fact into a clock. Instruments are not always built. Sometimes they are found, lying in plain view, waiting for someone to notice what they measure.',
     ].join('\n\n'),
   },
+  {
+    key: 'MEMORY',
+    domain: 'VARC.PASSAGE.PSYCH',
+    title: 'The unreliable archive',
+    body: [
+      'We speak of memory as though it were storage: things are put in, kept, and later retrieved more or less intact, with forgetting understood as loss. The metaphor is so comfortable that it is hard to notice it is a metaphor, and harder still to notice how badly it fits the evidence.',
+      'What the evidence suggests instead is that remembering is a kind of construction. A recollection is assembled at the moment of recall, from fragments, from general knowledge about how such episodes usually go, and from whatever the present circumstances make salient. This is why memories drift in the direction of the plausible, why they absorb details supplied by a leading question, and why confidence in a memory tracks how fluently it assembles rather than how accurate it is. The last of these is the most troubling, because confidence is the only signal available from the inside.',
+      'It would be a mistake to conclude that memory is therefore defective. A system that stored experience faithfully would be enormously expensive and, for most purposes, useless: what an organism needs is not a record of what happened but a serviceable expectation of what tends to happen. Reconstruction is not a bug in an archive; it is the working of a different kind of instrument altogether, one built for prediction rather than preservation.',
+      'The practical consequences fall hardest where institutions have assumed the storage model. Testimony is treated as retrieval, and its confidence as evidence of accuracy, when the research indicates the two are only loosely coupled. Nothing about this makes witnesses dishonest. It makes them ordinary users of a faculty that was never built to do the job the courtroom asks of it.',
+    ].join('\n\n'),
+  },
 ];
 
 // ─── Reading-comprehension questions ─────────────────────────────────────────
@@ -300,12 +311,60 @@ const RC = [
     solution:
       'The remark supports the opening claim that the fact was useless on its own, setting up the second idea that made it an instrument. There is no criticism of naturalists in the passage.',
   },
+
+  // ── Memory ──
+  {
+    passage: 'MEMORY', type: 'VARC.RC.MAIN', difficulty: 'moderate',
+    stem: 'Which of the following best captures the passage’s central claim?',
+    options: [
+      'Memory is defective, and institutions should therefore distrust all testimony.',
+      'Remembering is reconstruction rather than retrieval, and is built for prediction rather than preservation.',
+      'Confidence is a reliable guide to whether a memory is accurate.',
+      'Forgetting is best understood as the loss of stored material.',
+    ],
+    correct_option: 2,
+    support: 'Reconstruction is not a bug in an archive; it is the working of a different kind of instrument altogether, one built for prediction rather than preservation.',
+    solution:
+      'Options 3 and 4 are the positions the passage argues against. Option 1 overstates: the third paragraph explicitly denies that memory is defective, and the fourth says nothing about distrusting all testimony.',
+  },
+  {
+    passage: 'MEMORY', type: 'VARC.RC.TONE', difficulty: 'hard',
+    stem: 'The author’s attitude towards witnesses whose testimony proves inaccurate is best described as:',
+    options: ['sceptical of their honesty', 'exculpatory', 'dismissive', 'indifferent'],
+    correct_option: 2,
+    support: 'Nothing about this makes witnesses dishonest.',
+    solution:
+      'The final two sentences go out of their way to clear witnesses of blame, placing the fault with an institution that misunderstands the faculty. That is exculpatory, and the opposite of sceptical of their honesty.',
+  },
+  {
+    passage: 'MEMORY', type: 'VARC.RC.VOCAB', difficulty: 'moderate',
+    stem: 'In the second paragraph, “salient” most nearly means:',
+    options: ['accurate', 'prominent or noticeable', 'emotionally painful', 'deliberately concealed'],
+    correct_option: 2,
+    support: 'whatever the present circumstances make salient',
+    solution:
+      'The word sits in a list of things a recollection is assembled from, alongside fragments and general knowledge — so it describes what the present pushes into notice, not what is true or hidden.',
+  },
+  {
+    passage: 'MEMORY', type: 'VARC.RC.STRENGTH', difficulty: 'hard',
+    stem: 'Which of the following, if true, would most WEAKEN the author’s account?',
+    options: [
+      'Some people report vivid memories of events that never occurred.',
+      'Under carefully controlled conditions, confidence in a memory predicts its accuracy almost perfectly.',
+      'Leading questions can alter what a witness later reports.',
+      'Memory for general routines is more durable than memory for single episodes.',
+    ],
+    correct_option: 2,
+    support: 'confidence in a memory tracks how fluently it assembles rather than how accurate it is',
+    solution:
+      'The passage rests its most troubling claim on confidence and accuracy being only loosely coupled. Option 2 denies exactly that. Options 1 and 3 are consequences the passage already predicts, so they strengthen rather than weaken it.',
+  },
 ];
 
 // ─── Verbal ability ──────────────────────────────────────────────────────────
 // Keys here are COMPUTED from the construction, so there is no key to mistype.
 
-const JUMBLE = {
+const JUMBLES = [{
   type: 'VARC.VA.JUMBLE', difficulty: 'hard',
   // The paragraph in its coherent order.
   paragraph: [
@@ -318,9 +377,20 @@ const JUMBLE = {
   display: [2, 0, 3, 1],
   solution:
     'The paragraph opens by stating the conventional view (map records territory), turns against it with "But", then explains the mechanism, then closes with the general formulation. The opener cannot be a sentence beginning "But" or "The line", and "What began as a claim" is a summing-up that must come last.',
-};
+}, {
+  type: 'VARC.VA.JUMBLE', difficulty: 'moderate',
+  paragraph: [
+    'Every measure of performance eventually becomes a target that people work towards.',
+    'Once it is a target, effort shifts from the thing being measured to the measurement itself.',
+    'A hospital judged on waiting times can shorten them by redefining when the wait begins.',
+    'The number improves, the underlying problem does not, and the measure has quietly stopped measuring.',
+  ],
+  display: [1, 3, 0, 2],
+  solution:
+    'The general claim has to come before its consequence, and the hospital is an illustration of the consequence rather than of the claim. The closing sentence begins "The number improves", which only makes sense after a specific number has been introduced.',
+}];
 
-const ODD = {
+const ODDS = [{
   type: 'VARC.VA.ODD', difficulty: 'moderate',
   belong: [
     'For most of history, silence in a city was a sign of catastrophe rather than of peace.',
@@ -332,9 +402,21 @@ const ODD = {
   display: [0, 3, 1, 'X', 2],
   solution:
     'The four remaining sentences form an argument that the taste for quiet is historically produced. The intruder is a factual aside about a product\'s origins: true, related by topic, but contributing nothing to the argument — which is exactly how a well-made odd-one-out works.',
-};
+}, {
+  type: 'VARC.VA.ODD', difficulty: 'hard',
+  belong: [
+    'Translators have long argued about whether to render a text literally or idiomatically.',
+    'The literal version preserves what was said but often loses why it mattered.',
+    'The idiomatic version recovers the effect at the cost of the words that produced it.',
+    'Neither choice is available in a neutral form, because there is no version that is simply the text.',
+  ],
+  intruder: 'Machine translation systems are now trained on vast bilingual corpora scraped from the web.',
+  display: [1, 'X', 0, 2, 3],
+  solution:
+    'The four form a single argument about an unavoidable trade-off. The intruder concerns how modern systems are built — same subject area, no part in the argument. Note it is placed second, not last: an intruder at the end is much easier to spot.',
+}];
 
-const INSERT = {
+const INSERTS = [{
   type: 'VARC.VA.INSERT', difficulty: 'hard',
   // The paragraph with one sentence removed; the student places it.
   paragraph: [
@@ -349,9 +431,21 @@ const INSERT = {
   correctPosition: 4,
   solution:
     'The sentence must follow "it leaves something out" — it IS the thing left out — and must precede the explanation of why, which the final sentence supplies. Placing it earlier pre-empts the objection the third sentence raises; placing it last leaves the paragraph explaining a point already concluded.',
-};
+}, {
+  type: 'VARC.VA.INSERT', difficulty: 'moderate',
+  paragraph: [
+    'Cities have tried for a century to solve congestion by building more road capacity.',
+    'The new capacity fills, journey times return to what they were, and the case is made for building more.',
+    'What the pattern shows is that traffic is not a fixed quantity meeting a fixed supply.',
+    'It is a quantity that expands to occupy whatever room it is given.',
+  ],
+  removedSentence: 'Each time, the relief proves temporary.',
+  correctPosition: 2,
+  solution:
+    'The sentence has to sit between the attempted solution and the description of how it unravels — it announces the failure that the next sentence then details. Placed later it would be redundant, since the unravelling has already been described.',
+}];
 
-const SUMMARY = {
+const SUMMARIES = [{
   type: 'VARC.VA.SUMMARY', difficulty: 'hard',
   passage:
     'Attempts to measure the productivity of research run into a difficulty that is not merely practical. '
@@ -368,7 +462,23 @@ const SUMMARY = {
   correct_option: 1,
   solution:
     'Option 1 carries both moves of the paragraph: the delay in value becoming known, and the consequence that early metrics measure something else. Option 3 reduces a structural point to a practical one, which the first sentence explicitly rules out. Option 4 is a recommendation the passage never makes.',
-};
+}, {
+  type: 'VARC.VA.SUMMARY', difficulty: 'moderate',
+  passage:
+    'It is often said that a language dies when its last speaker dies, but this puts the moment far too late. '
+    + 'A language ceases to be viable much earlier, at the point where children stop acquiring it as a first '
+    + 'language, because from then on its speaker population can only shrink. The final speaker is the visible '
+    + 'end of a process whose decisive step took place a generation or two before, usually unremarked.',
+  options: [
+    'Languages should be preserved by recording their last remaining speakers before they die.',
+    'A language becomes doomed when children stop learning it first, so the death of the last speaker merely marks the visible end of a much earlier turn.',
+    'Most languages spoken today will disappear within a few generations.',
+    'The number of speakers is a poor guide to whether a language is healthy.',
+  ],
+  correct_option: 2,
+  solution:
+    'Option 2 carries both halves: the decisive moment is the failure of transmission, and the last speaker is only the visible end. Option 4 is close but drops the mechanism, which is the paragraph\'s whole point. Options 1 and 3 add claims the paragraph never makes.',
+}];
 
 // ─── Assertions ──────────────────────────────────────────────────────────────
 
@@ -455,30 +565,53 @@ function verifyContent() {
   }
   console.log('');
 
-  // Verbal ability: keys derived from construction.
-  const jumble = buildJumble(JUMBLE);
-  assert(jumble.sentences.length === JUMBLE.paragraph.length, 'jumble: display drops a sentence');
-  assert(new Set(JUMBLE.display).size === JUMBLE.display.length, 'jumble: display repeats an index');
-  // Applying the computed key to the shown order must rebuild the paragraph exactly.
-  const rebuilt = jumble.correct_answer.split('').map(d => jumble.sentences[Number(d) - 1]);
-  assert(JSON.stringify(rebuilt) === JSON.stringify(JUMBLE.paragraph),
-    'jumble: the computed key does not rebuild the coherent paragraph');
-  console.log(`  ok  jumble   key ${jumble.correct_answer} rebuilds the paragraph exactly`);
+  // Verbal ability: keys derived from construction, never declared.
+  const jumbles = JUMBLES.map((spec, i) => {
+    const built = buildJumble(spec);
+    assert(built.sentences.length === spec.paragraph.length, `jumble ${i + 1}: display drops a sentence`);
+    assert(new Set(spec.display).size === spec.display.length, `jumble ${i + 1}: display repeats an index`);
+    // Applying the computed key to the shown order must rebuild the paragraph exactly.
+    const rebuilt = built.correct_answer.split('').map(d => built.sentences[Number(d) - 1]);
+    assert(JSON.stringify(rebuilt) === JSON.stringify(spec.paragraph),
+      `jumble ${i + 1}: the computed key does not rebuild the coherent paragraph`);
+    // A display order identical to the coherent order is not a jumble at all.
+    assert(built.correct_answer !== spec.paragraph.map((_, n) => n + 1).join(''),
+      `jumble ${i + 1}: the sentences are shown already in order`);
+    console.log(`  ok  jumble ${i + 1}  key ${built.correct_answer} rebuilds the paragraph exactly`);
+    return { spec, built };
+  });
 
-  const odd = buildOdd(ODD);
-  assert(odd.sentences.length === 5, 'odd: expected 5 sentences');
-  assert(odd.sentences[Number(odd.correct_answer) - 1] === ODD.intruder,
-    'odd: the computed label does not point at the intruder');
-  console.log(`  ok  odd      key ${odd.correct_answer} points at the declared intruder`);
+  const odds = ODDS.map((spec, i) => {
+    const built = buildOdd(spec);
+    assert(built.sentences.length === spec.belong.length + 1, `odd ${i + 1}: wrong sentence count`);
+    assert(built.sentences[Number(built.correct_answer) - 1] === spec.intruder,
+      `odd ${i + 1}: the computed label does not point at the intruder`);
+    console.log(`  ok  odd ${i + 1}     key ${built.correct_answer} points at the declared intruder`);
+    return { spec, built };
+  });
 
-  const insert = buildInsert(INSERT);
-  assert(INSERT.correctPosition >= 1 && INSERT.correctPosition <= INSERT.paragraph.length + 1,
-    'insert: correctPosition out of range');
-  console.log(`  ok  insert   key ${insert.correct_answer} within 1..${INSERT.paragraph.length + 1}`);
+  const inserts = INSERTS.map((spec, i) => {
+    const built = buildInsert(spec);
+    assert(spec.correctPosition >= 1 && spec.correctPosition <= spec.paragraph.length + 1,
+      `insert ${i + 1}: correctPosition out of range`);
+    console.log(`  ok  insert ${i + 1}  key ${built.correct_answer} within 1..${spec.paragraph.length + 1}`);
+    return { spec, built };
+  });
 
-  assert(SUMMARY.options.length === 4, 'summary: expected 4 options');
-  assert(SUMMARY.correct_option >= 1 && SUMMARY.correct_option <= 4, 'summary: key out of range');
-  console.log(`  ok  summary  key ${SUMMARY.correct_option}`);
+  SUMMARIES.forEach((spec, i) => {
+    assert(spec.options.length === 4, `summary ${i + 1}: expected 4 options`);
+    assert(spec.correct_option >= 1 && spec.correct_option <= 4, `summary ${i + 1}: key out of range`);
+    assert(new Set(spec.options.map(o => o.toLowerCase())).size === 4,
+      `summary ${i + 1}: duplicate options`);
+    console.log(`  ok  summary ${i + 1} key ${spec.correct_option}`);
+  });
+
+  // No VA type may have every key the same, for the reason the DILR data-sufficiency
+  // set proved: a set answerable by repeating one response measures nothing.
+  const summaryKeys = SUMMARIES.map(s => s.correct_option);
+  if (summaryKeys.length > 2) {
+    assert(new Set(summaryKeys).size > 1, 'every summary question has the same keyed option');
+  }
 
   // Type coverage: all 7 RC leaves and all 4 VA leaves must appear.
   const rcTypes = new Set(RC.map(q => q.type));
@@ -488,8 +621,9 @@ function verifyContent() {
   assert(missingRc.length === 0, `RC types with no question: ${missingRc.join(', ')}`);
   console.log(`\n  ok  all ${expectedRc.length} RC types covered, all 4 VA types covered`);
 
-  console.log(`\ncontent ok: ${RC.length} RC + 4 VA = ${RC.length + 4} questions\n`);
-  return { jumble, odd, insert };
+  const vaCount = jumbles.length + odds.length + inserts.length + SUMMARIES.length;
+  console.log(`\ncontent ok: ${RC.length} RC + ${vaCount} VA = ${RC.length + vaCount} questions\n`);
+  return { jumbles, odds, inserts };
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -498,12 +632,11 @@ const PAPER = {
   code: 'ASHA.PRACTICE.VARC.01',
   title: 'ASHA Practice — VARC 1',
   description:
-    'Three original passages with twelve questions, plus four verbal-ability '
-    + 'questions. Shorter than a real VARC section, which runs 24 questions in 40 '
-    + 'minutes.',
+    'Four original passages with sixteen questions, plus eight verbal-ability '
+    + 'questions — the same shape and length as a real CAT VARC section.',
   is_full_mock: false,
-  // 16 questions at CAT's VARC pace (40 min for 24 questions = 100 s each).
-  time_limit_min: 27,
+  // 24 questions in 40 minutes: CAT's own VARC allowance exactly.
+  time_limit_min: 40,
   active: true,
 };
 
@@ -524,7 +657,8 @@ async function main() {
   const typeByCode = Object.fromEntries(types.map(t => [t.code, t.id]));
 
   for (const code of [...new Set([...RC.map(q => q.type), ...PASSAGES.map(p => p.domain),
-                                  JUMBLE.type, ODD.type, INSERT.type, SUMMARY.type])]) {
+                                  ...JUMBLES.map(s => s.type), ...ODDS.map(s => s.type),
+                                  ...INSERTS.map(s => s.type), ...SUMMARIES.map(s => s.type)])]) {
     assert(typeByCode[code], `taxonomy code '${code}' does not exist for CAT`);
   }
 
@@ -586,15 +720,19 @@ async function main() {
   }
 
   const va = [
-    { type: JUMBLE.type, difficulty: JUMBLE.difficulty, format: 'tita',
-      stem: built.jumble.stem, correct_answer: built.jumble.correct_answer, solution: JUMBLE.solution },
-    { type: ODD.type, difficulty: ODD.difficulty, format: 'tita',
-      stem: built.odd.stem, correct_answer: built.odd.correct_answer, solution: ODD.solution },
-    { type: INSERT.type, difficulty: INSERT.difficulty, format: 'tita',
-      stem: built.insert.stem, correct_answer: built.insert.correct_answer, solution: INSERT.solution },
-    { type: SUMMARY.type, difficulty: SUMMARY.difficulty, format: 'mcq',
-      stem: 'Read the paragraph below and pick the option that best summarises it.\n\n' + SUMMARY.passage,
-      options: SUMMARY.options, correct_option: SUMMARY.correct_option, solution: SUMMARY.solution },
+    ...built.jumbles.map(({ spec, built: b }) => ({
+      type: spec.type, difficulty: spec.difficulty, format: 'tita',
+      stem: b.stem, correct_answer: b.correct_answer, solution: spec.solution })),
+    ...built.odds.map(({ spec, built: b }) => ({
+      type: spec.type, difficulty: spec.difficulty, format: 'tita',
+      stem: b.stem, correct_answer: b.correct_answer, solution: spec.solution })),
+    ...built.inserts.map(({ spec, built: b }) => ({
+      type: spec.type, difficulty: spec.difficulty, format: 'tita',
+      stem: b.stem, correct_answer: b.correct_answer, solution: spec.solution })),
+    ...SUMMARIES.map((spec) => ({
+      type: spec.type, difficulty: spec.difficulty, format: 'mcq',
+      stem: 'Read the paragraph below and pick the option that best summarises it.\n\n' + spec.passage,
+      options: spec.options, correct_option: spec.correct_option, solution: spec.solution })),
   ];
 
   for (const q of va) {

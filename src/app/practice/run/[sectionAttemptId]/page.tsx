@@ -54,6 +54,23 @@ export default async function PracticeRunPage({
   const paper = one(attempt.practice_papers);
   const section = one(sectionAttempt.sections);
 
+  // Where this section sits in the paper. A single-section practice set reports 1
+  // of 1 and the runner says nothing; a full mock says "SECTION 2 OF 3", because
+  // during a 2-hour paper knowing how much is left is not a nicety.
+  const { data: allSections } = await supabase
+    .from("section_attempts")
+    .select("section_id, sections(ordinal)")
+    .eq("mock_attempt_id", attempt.id);
+
+  const ordered = (allSections ?? [])
+    .map((s) => ({
+      sectionId: s.section_id as string,
+      ordinal: (one(s.sections)?.ordinal ?? 0) as number,
+    }))
+    .sort((a, b) => a.ordinal - b.ordinal);
+  const sectionIndex = ordered.findIndex((s) => s.sectionId === sectionAttempt.section_id) + 1;
+  const sectionTotal = ordered.length;
+
   // Stems, options and any shared stimulus — a reading passage or a set's data.
   // Still NO correct_option, correct_answer or solution.
   const { data: items } = await supabase
@@ -122,6 +139,8 @@ export default async function PracticeRunPage({
       attemptId={attempt.id}
       paperTitle={paper?.title ?? "Practice"}
       sectionCode={section?.code ?? ""}
+      sectionIndex={sectionIndex}
+      sectionTotal={sectionTotal}
       timeLimitMin={timeLimitMin}
       questions={questions}
     />

@@ -2,6 +2,28 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-06 — Full-length mocks: VARC to 24, multi-section runs, and ASHA Mock 1
+
+**What changed**
+- **VARC is now a real section** — a fourth passage and a second of every verbal-ability type take it from 16 to **24 questions in 40 minutes**, CAT's own shape.
+- **Multi-section papers now work.** `/api/practice/start` used to refuse them outright.
+- **`ASHA Mock 1`** — 66 questions, VARC → DILR → QA, 40 minutes each.
+- **`npm run seed:all`** runs the content seeds and then the mock, in the order that matters.
+
+**A mock is three sequential single-section runs, which is simpler than it sounds.** CAT locks sections: you cannot return to one you have left. So `start` creates a `section_attempt` per section up front and hands over the first; each submit returns the next. Nothing holds three clocks at once, and each section uses its own 40 minutes from `sections.time_limit_min` — which is why the mock's own `time_limit_min` is null, the case migration `0009` reserved for full mocks.
+
+**The section lock is enforced on the server, not in the copy.** Which section comes next is derived from which siblings already hold answers, never from anything the client sends — so a replayed or edited request cannot skip a section or reopen a finished one. Verified: re-submitting a completed section returns **409**.
+
+**A mock stays incomplete until every section is sat.** Verified after one of three: `is_complete = false`, VARC scored, DILR and QA unsat. That is what keeps a mock abandoned after VARC out of the analytics, since `loadAnalyticsData` counts only complete attempts.
+
+**Mock 1 is 66 questions, not 68, and says so on its own card.** DILR sets are indivisible — four questions hang off one exhibit, and taking two would hand a student an exhibit to answer half of. Five whole sets is 20 against CAT's 22. The seed prints the shortfall and writes it into the paper description rather than rounding up quietly; closing it needs a six-question set, which real CAT sets do have.
+
+**A footgun worth knowing about.** The mock owns no questions — its `paper_items` point at items owned by the three content sources, and those scripts rebuild by deleting. Since `question_item_id` is `ON DELETE CASCADE`, **re-running any content seed silently empties the mock**, leaving a paper with zero questions that still reports fine. Guarded two ways: `seed:all` runs things in the right order, and `seed:mock` refuses to finish unless all three sections come back full and gradable.
+
+**How to test it**
+1. `npm run seed:all`
+2. `/practice` → **ASHA Mock 1** → the header reads `VARC · SECTION 1 OF 3` and warns the section cannot be reopened. Submitting moves to `DILR · SECTION 2 OF 3` with a fresh clock.
+
 ## 2026-08-06 — A laptop layout for the runner, and an entry screen that admits practice exists
 
 **What changed**

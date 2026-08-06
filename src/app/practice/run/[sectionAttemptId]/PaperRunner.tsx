@@ -65,6 +65,8 @@ export default function PaperRunner({
   attemptId,
   paperTitle,
   sectionCode,
+  sectionIndex,
+  sectionTotal,
   timeLimitMin,
   questions,
 }: {
@@ -72,6 +74,8 @@ export default function PaperRunner({
   attemptId: string;
   paperTitle: string;
   sectionCode: string;
+  sectionIndex: number;
+  sectionTotal: number;
   timeLimitMin: number | null;
   questions: Question[];
 }) {
@@ -177,6 +181,22 @@ export default function PaperRunner({
           setPhase("error");
           return;
         }
+        /*
+         * A full mock hands over to its next section rather than ending. The server
+         * decides which section that is; the client only follows, so a tampered
+         * response cannot make it skip one.
+         *
+         * `router.refresh()` before the push matters: the next section is a
+         * different route parameter but the same route, and without it Next serves
+         * the cached RSC payload and the student sees the section they just
+         * finished.
+         */
+        if (typeof body.nextSectionAttemptId === "string") {
+          submitted.current = false;
+          router.refresh();
+          router.push(`/practice/run/${body.nextSectionAttemptId}`);
+          return;
+        }
         router.push(`/log/${attemptId}`);
       } catch {
         submitted.current = false;
@@ -243,7 +263,9 @@ export default function PaperRunner({
     return (
       <main className="safe-top safe-bottom flex min-h-dvh flex-col bg-ink px-6">
         <div className="font-mono text-[11px] font-semibold tracking-[0.24em] text-brass">
-          PRACTICE · {sectionCode}
+          {sectionTotal > 1
+            ? `${sectionCode} · SECTION ${sectionIndex} OF ${sectionTotal}`
+            : `PRACTICE · ${sectionCode}`}
         </div>
         <div className="mt-1.5 text-[12.5px] text-mute-300">{paperTitle}</div>
 
@@ -269,6 +291,11 @@ export default function PaperRunner({
             <li>
               {"Saying how sure you were is optional and takes one tap. Only tagged answers count towards your calibration — but tag it honestly or it is worth nothing."}
             </li>
+            {sectionTotal > 1 && (
+              <li>
+                {`This is section ${sectionIndex} of ${sectionTotal}. Submitting moves you on, and like the real exam you cannot come back to it.`}
+              </li>
+            )}
             <li>Marked automatically when you submit. Nothing to check by hand.</li>
           </ul>
         </div>
@@ -612,7 +639,7 @@ export default function PaperRunner({
           onClick={finish}
           className="rounded-[13px] bg-brass py-3.5 text-[14px] font-semibold text-white lg:px-8 lg:py-3"
         >
-          Submit and mark
+          {sectionIndex < sectionTotal ? "Submit and start the next section" : "Submit and mark"}
         </button>
       </div>
       </div>

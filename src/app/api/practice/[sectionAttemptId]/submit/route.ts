@@ -214,18 +214,49 @@ export async function POST(
     return NextResponse.json({ ok: false, error: sectionError.message }, { status: 500 });
   }
 
-  // The attempt's own total. Summed from the section attempts rather than from this
-  // run alone, so a multi-section paper adds up correctly when that arrives.
+  /*
+   * Hand over to the next section, or finish the attempt.
+   *
+   * A full mock is three sections run strictly in order. "Next" means the sibling
+   * section_attempt with the lowest ordinal that has no answers yet — derived from
+   * the data rather than from anything the client sends, so a replayed or tampered
+   * request cannot skip a section or reopen a finished one.
+   *
+   * The attempt is only marked complete once no section remains, which is what
+   * keeps a half-finished mock out of the analytics: `loadAnalyticsData` counts
+   * complete attempts, and a mock abandoned after VARC is not a mock.
+   */
   const { data: siblings } = await supabase
     .from("section_attempts")
-    .select("score")
+    .select("id, score, section_id, sections(ordinal)")
     .eq("mock_attempt_id", attempt.id);
 
-  const total = (siblings ?? []).reduce((sum, s) => sum + Number(s.score ?? 0), 0);
+  const all = siblings ?? [];
+  const total = all.reduce((sum, s) => sum + Number(s.score ?? 0), 0);
+
+  // Which siblings already hold answers. A section with rows has been sat.
+  const { data: answered } = await supabase
+    .from("question_attempts")
+    .select("section_attempt_id")
+    .in("section_attempt_id", all.map((s) => s.id));
+  const sat = new Set((answered ?? []).map((r) => r.section_attempt_id as string));
+
+  const remaining = all
+    .filter((s) => !sat.has(s.id))
+    .map((s) => ({
+      id: s.id,
+      ordinal: (Array.isArray(s.sections) ? s.sections[0] : s.sections)?.ordinal ?? 0,
+    }))
+    .sort((a, b) => a.ordinal - b.ordinal);
+
+  const nextSectionAttemptId = remaining.length > 0 ? remaining[0].id : null;
 
   const { error: attemptError } = await supabase
     .from("mock_attempts")
-    .update({ total_score: Math.round(total * 100) / 100, is_complete: true })
+    .update({
+      total_score: Math.round(total * 100) / 100,
+      is_complete: nextSectionAttemptId === null,
+    })
     .eq("id", attempt.id);
   if (attemptError) {
     return NextResponse.json({ ok: false, error: attemptError.message }, { status: 500 });
@@ -234,6 +265,8 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     attemptId: attempt.id,
+    nextSectionAttemptId,
+    sectionsRemaining: remaining.length,
     ...totals,
   });
 }
