@@ -2,6 +2,30 @@
 
 Dated history, newest first. Every iteration adds an entry: what changed, why, and how to test it (CLAUDE.md, workflow rule 4).
 
+## 2026-08-05 — All 12 DILR archetypes, and charts that are actually charts
+
+**What changed**
+- **Migration `0010`** — `question_stimuli.chart_spec jsonb` and a third `kind`, `'chart'`.
+- **`StimulusChart.tsx`** — an SVG renderer for bar, line and scatter, drawn from the spec.
+- **Five new sets** — team selection, data sufficiency, bar chart, scatter plot, pricing grid — and **DILR 3** (20 questions, 40 min, five sets: the real section's shape).
+- **107 practice questions across 7 papers.** All 12 DILR archetypes now have content, as does every CAT QA and VARC question type.
+
+**Why a chart needed a schema change rather than a table.** Chart interpretation and scatter/correlation test the reading of a graphic. Handing over a table of exact values does not make an easier chart question — it makes a *different* one, testing arithmetic instead of reading. Seeding a table and tagging it `DILR.ARCH.CHART` would have put a false archetype on every attempt row derived from it, and the playbook would then report a strength the student may not have.
+
+**Why a structured spec and not stored SVG.** Keeping the chart as markup in `body` and rendering it with `dangerouslySetInnerHTML` works today and is a latent injection hole tomorrow: `content_sources.kind = 'private'` is reserved for a student's own material, and the moment that becomes writable, stored markup rendered as HTML is user-supplied HTML executing in another page. A spec rendered by ASHA's own component cannot carry script, whoever wrote the row.
+
+**Values are deliberately not printed on the marks.** Labelling each bar with its figure would turn chart-reading back into arithmetic. So the student reads against gridlines, and every chart question is written to tolerate that: comparisons, counts, and one approximation whose four options are spread far enough apart that gridline precision decides between them.
+
+**A flaw the new assertions caught.** The data-sufficiency set answered **3 to all four questions** — a student could have scored full marks typing `3` four times without reading anything. That is not a hard set with an unlucky pattern; it is a set that measures nothing, and it looked entirely fine in the seed output. The four answers now span all four verdicts, and there is a standing assertion that **no set can be passed by repeating one response**.
+
+**How to test it**
+1. `npm run seed:dilr` — five unique solutions, `TEAM 5 valid panels of 20`, both chart specs validated, `no set is answerable by repeating one response`, all three papers contiguous.
+2. `/practice` → **DILR 3** → question 9 is the bar chart, 13 the scatter.
+
+**Verified rather than eyeballed.** The pane could not be screenshotted, so instead each bar's height was read back out of the rendered SVG and decoded through the plot geometry: all twelve recovered values reproduce the source data exactly, every bar shares the baseline, and both charts render 290×181 inside their panel at a true 360px viewport with no page side-scroll.
+
+A DILR practice run also now reports correctly on the attempt page — `20 / 20 Q · BY QUESTION`. Before the fix it counted `set_attempts` (of which a practice run has none) and would have shown `0 / 22 Q · BY SET` for a completed paper.
+
 ## 2026-08-05 — Four more DILR sets: 7 of 12 archetypes covered
 
 **What changed**

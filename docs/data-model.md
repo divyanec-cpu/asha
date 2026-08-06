@@ -138,6 +138,13 @@ Defined and seeded, but nothing reads them in v1. Listed so no one wires a UI to
 - **`0005_passage_domain.sql`** *(2026-07-29)* — extends `question_types.kind` with `passage_domain` and reclassifies the 7 already-seeded VARC domain leaves; adds nullable `passage_domain_id` to `question_attempts` with a partial index; adds `assert_passage_domain_valid()` and its trigger. Additive and reversible — the rollback is written out at the foot of the migration file.
 
 - **`0009_practice_content.sql`** *(2026-08-04)* — the practice-content layer. Five new tables plus three additive nullable columns and a widened `entry_mode`. Additive and reversible.
+- **`0010_stimulus_charts.sql`** *(2026-08-05)* — `question_stimuli.chart_spec jsonb` and a third `kind`, `'chart'`, so a DILR chart exhibit can be a real graphic rather than a table wearing the label. A CHECK ties the two together: `kind = 'chart'` requires a spec with a `type` and a non-empty `series`, and any other kind requires the spec to be null — so neither a blank chart nor a passage carrying chart data can be inserted at all.
+
+  **The spec is structured data, not SVG markup, and that is deliberate.** Stored markup rendered through `dangerouslySetInnerHTML` works today and becomes an injection vector the moment `content_sources.kind = 'private'` turns writable, because that is user-supplied HTML executing in another page. A spec rendered by `StimulusChart.tsx` cannot carry script, whoever wrote the row.
+
+  Spec shape: `{ type: 'bar'|'line'|'scatter', xLabel?, yLabel?, yMax?, series: [{ name, points: [{x, y}] }] }`. Deliberately narrow — it is not a general charting language and should not become one. Additive and reversible.
+
+  **Chart marks carry no printed values.** A chart question tests reading a graphic; labelling each bar with its figure turns it into arithmetic, which is the same objection that makes a table a dishonest substitute. Questions against a chart must therefore be robust to reading precision — comparisons, counts, or approximations whose options are far apart — and the seed keeps them so.
 
 ## Practice content (`0009`, 2026-08-04)
 

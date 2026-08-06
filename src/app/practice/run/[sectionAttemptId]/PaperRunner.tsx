@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatClock, sectionClock } from "@/lib/sectionClock";
 import { decideWorkingOrder } from "@/lib/workingOrder";
+import StimulusChart, { type ChartSpec } from "./StimulusChart";
 
 /**
  * A timed practice run with the questions on screen.
@@ -40,6 +41,7 @@ type Question = {
   stimulusTitle: string | null;
   stimulusBody: string | null;
   stimulusKind: string | null;
+  stimulusChart: ChartSpec | null;
 };
 
 type Answer = {
@@ -412,9 +414,9 @@ export default function PaperRunner({
               <span className="font-mono text-[10px] font-semibold tracking-[0.12em] text-brass">
                 {q.stimulusTitle
                   ? q.stimulusTitle.toUpperCase()
-                  : q.stimulusKind === "set_data"
-                    ? "THE SET"
-                    : "THE PASSAGE"}
+                  : q.stimulusKind === "passage"
+                    ? "THE PASSAGE"
+                    : "THE SET"}
               </span>
               <span className="ml-2 font-mono text-[10px] font-semibold tracking-[0.06em] text-mute-500">
                 {collapsed.has(q.stimulusId) ? "SHOW" : "HIDE"}
@@ -434,6 +436,17 @@ export default function PaperRunner({
                   q.stimulusKind === "set_data" ? "overflow-x-auto" : ""
                 }`}
               >
+                {/*
+                  The chart sits above its prose, because the prose usually explains
+                  what the axes mean. Values are deliberately NOT printed on the
+                  marks — see StimulusChart for why, and why the questions are
+                  written to tolerate reading precision.
+                */}
+                {q.stimulusChart !== null && (
+                  <div className="mb-3">
+                    <StimulusChart spec={q.stimulusChart} />
+                  </div>
+                )}
                 {q.stimulusBody.split("\n\n").map((block, i) => {
                   /*
                    * Only blocks the author put LINE BREAKS in are structural — a

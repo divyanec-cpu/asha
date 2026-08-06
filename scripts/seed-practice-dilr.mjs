@@ -361,10 +361,185 @@ const NETWORK = {
   },
 };
 
+// ─── Set 8: Team formation ───────────────────────────────────────────────────
+
+const TEAM = {
+  key: 'TEAM',
+  archetype: 'DILR.ARCH.TEAM',
+  title: 'Set 8 — picking a panel of three',
+  body: [
+    'A panel of exactly three members must be chosen from six candidates: F, G, H, J, K and L.',
+    'The following rules apply:',
+    '  (i)   If F is chosen, G must also be chosen.\n'
+    + '  (ii)  H and J cannot both be chosen.\n'
+    + '  (iii) At least one of K and L must be chosen.\n'
+    + '  (iv)  If G is chosen, K cannot be chosen.',
+  ].join('\n\n'),
+
+  candidates: ['F', 'G', 'H', 'J', 'K', 'L'],
+
+  /** Enumerates all 20 three-member panels and keeps the valid ones. */
+  solve(variant = {}) {
+    const dropIV = variant.dropIV ?? false;
+    const c = this.candidates;
+    const out = [];
+    for (let i = 0; i < c.length; i += 1)
+      for (let j = i + 1; j < c.length; j += 1)
+        for (let k = j + 1; k < c.length; k += 1) {
+          const panel = [c[i], c[j], c[k]];
+          const has = (x) => panel.includes(x);
+          if (has('F') && !has('G')) continue;                 // (i)
+          if (has('H') && has('J')) continue;                  // (ii)
+          if (!has('K') && !has('L')) continue;                // (iii)
+          if (!dropIV && has('G') && has('K')) continue;       // (iv)
+          out.push(panel);
+        }
+    return out;
+  },
+};
+
+// ─── Set 9: Data sufficiency ─────────────────────────────────────────────────
+// Not a puzzle with one solution — the question is whether each statement pins the
+// answer down. So `solve` here reports, for a given question, whether statement I
+// alone, statement II alone, or both together determine the value.
+
+const DS = {
+  key: 'DS',
+  archetype: 'DILR.ARCH.DS',
+  title: 'Set 9 — is it enough?',
+  body: [
+    'Each question below is followed by two statements, I and II. Decide whether the statements provide enough information to answer the question.',
+    'Type the number of the option that applies:',
+    '  1  Statement I alone is sufficient, but II alone is not.\n'
+    + '  2  Statement II alone is sufficient, but I alone is not.\n'
+    + '  3  Neither alone is sufficient, but both together are.\n'
+    + '  4  Even both together are not sufficient.',
+    'A statement is sufficient only if it fixes the answer to a single value.',
+  ].join('\n\n'),
+
+  /**
+   * Each item declares the candidate space and what each statement rules in. The
+   * verdict is COMPUTED by counting how many candidates survive — so the answer
+   * cannot disagree with the statements as written, which is the usual way a
+   * hand-authored data-sufficiency item goes wrong.
+   */
+  verdict(candidates, stI, stII) {
+    const uniq = (list) => new Set(list.map((c) => JSON.stringify(c.value))).size;
+    const onlyI = candidates.filter(stI);
+    const onlyII = candidates.filter(stII);
+    const both = candidates.filter((c) => stI(c) && stII(c));
+    const iEnough = onlyI.length > 0 && uniq(onlyI) === 1;
+    const iiEnough = onlyII.length > 0 && uniq(onlyII) === 1;
+    const bothEnough = both.length > 0 && uniq(both) === 1;
+    if (iEnough && !iiEnough) return 1;
+    if (iiEnough && !iEnough) return 2;
+    if (iEnough && iiEnough) return 1;   // both alone sufficient — not used below
+    if (bothEnough) return 3;
+    return 4;
+  },
+};
+
+// ─── Set 10: Chart interpretation ────────────────────────────────────────────
+// A REAL chart, not a table wearing the label. See migration 0010.
+
+const CHART = {
+  key: 'CHART',
+  archetype: 'DILR.ARCH.CHART',
+  title: 'Set 10 — units sold, two products',
+  months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  // Values are read off gridlines by the student, so questions must tolerate
+  // imprecision — comparisons and counts, not exact arithmetic.
+  alpha: [40, 55, 50, 70, 65, 80],
+  beta: [70, 65, 45, 50, 60, 30],
+  get chart_spec() {
+    return {
+      type: 'bar',
+      xLabel: 'Month',
+      yLabel: 'Units sold (thousands)',
+      yMax: 100,
+      series: [
+        { name: 'Alpha', points: this.months.map((m, i) => ({ x: m, y: this.alpha[i] })) },
+        { name: 'Beta', points: this.months.map((m, i) => ({ x: m, y: this.beta[i] })) },
+      ],
+    };
+  },
+  body: [
+    'The chart shows the number of units sold, in thousands, of two products — Alpha and Beta — in each month of the first half of a year.',
+    'Read the values from the chart. No exact figures are given.',
+  ].join('\n\n'),
+};
+
+// ─── Set 11: Scatter / correlation ───────────────────────────────────────────
+
+const SCATTER = {
+  key: 'SCATTER',
+  archetype: 'DILR.ARCH.SCATTER',
+  title: 'Set 11 — study hours and scores',
+  // [hours, score] for twelve students.
+  points: [
+    [2, 30], [3, 45], [4, 40], [5, 55], [6, 50], [7, 70],
+    [8, 65], [9, 80], [10, 75], [11, 85], [12, 90], [6, 85],
+  ],
+  get chart_spec() {
+    return {
+      type: 'scatter',
+      xLabel: 'Hours studied per week',
+      yLabel: 'Test score',
+      yMax: 100,
+      series: [{ name: 'Students', points: this.points.map(([x, y]) => ({ x, y })) }],
+    };
+  },
+  body: [
+    'Each point on the chart represents one of twelve students, plotted by the hours they studied per week and the score they obtained on a test marked out of 100.',
+    'Read the values from the chart.',
+  ].join('\n\n'),
+};
+
+// ─── Set 12: Grid / quant-logic hybrid ───────────────────────────────────────
+
+const HYBRID = {
+  key: 'HYBRID',
+  archetype: 'DILR.ARCH.HYBRID',
+  title: 'Set 12 — three friends, three purchases',
+  body: [
+    'Three friends — Dev, Esha and Farah — each bought exactly one item, and no two bought the same item. The items were a lamp, a mirror and a rug, priced at ₹400, ₹700 and ₹900 in some order.',
+    'It is known that:',
+    '  (i)   The rug cost more than the mirror.\n'
+    + '  (ii)  Dev spent ₹700.\n'
+    + '  (iii) Esha did not buy the cheapest item.\n'
+    + '  (iv)  The lamp was the cheapest of the three items.',
+  ].join('\n\n'),
+
+  /**
+   * Enumerates every pairing of prices to items and of items to people — 36
+   * combinations — and keeps those satisfying all four conditions.
+   */
+  solve() {
+    const items = ['lamp', 'mirror', 'rug'];
+    const people = ['Dev', 'Esha', 'Farah'];
+    const out = [];
+    for (const priceOrder of permutations([400, 700, 900])) {
+      const price = Object.fromEntries(items.map((it, i) => [it, priceOrder[i]]));
+      if (!(price.rug > price.mirror)) continue;                    // (i)
+      if (price.lamp !== Math.min(...priceOrder)) continue;         // (iv)
+      for (const owners of permutations(people)) {
+        // owners[i] bought items[i]
+        const boughtBy = Object.fromEntries(items.map((it, i) => [it, owners[i]]));
+        const itemOf = Object.fromEntries(owners.map((p, i) => [p, items[i]]));
+        if (price[itemOf.Dev] !== 700) continue;                    // (ii)
+        if (price[itemOf.Esha] === Math.min(...priceOrder)) continue; // (iii)
+        out.push({ price, boughtBy, itemOf });
+      }
+    }
+    return out;
+  },
+};
+
 // ─── Questions ───────────────────────────────────────────────────────────────
 // `answer` is a FUNCTION of the solved set, never a declared constant.
 
-const SETS = [ARRANGE, BINARY, CASELET, GAMES, SCHEDULE, VENN, NETWORK];
+const SETS = [ARRANGE, BINARY, CASELET, GAMES, SCHEDULE, VENN, NETWORK,
+              TEAM, DS, CHART, SCATTER, HYBRID];
 
 const QUESTIONS = [
   // ── Set 1 ──
@@ -635,6 +810,280 @@ const QUESTIONS = [
       'Without D–E, E can only be reached from C at 12 km, making F 15 km that way, while F via D is '
       + '8 + 6 = 14 km. So the shortest becomes 14 km along A–C–B–D–F.',
   },
+
+  // ── Set 8: Team formation ──
+  {
+    set: 'TEAM', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'How many different panels of three can be formed?',
+    answer: () => TEAM.solve().length,
+    solution:
+      'Of the 20 possible three-member panels, the four rules leave a small number standing. Rule '
+      + '(iv) is the sharp one: it means G and K exclude each other, and since (i) drags G in '
+      + 'whenever F appears, F and K cannot appear together either.',
+  },
+  {
+    set: 'TEAM', skill: 'DILR.SKILL.DEDUCE', format: 'mcq', difficulty: 'hard',
+    stem: 'If F is chosen, which of the following must also be true?',
+    options: ['K is chosen', 'L is chosen', 'H is chosen', 'J is chosen'],
+    answer: () => {
+      const withF = TEAM.solve().filter(p => p.includes('F'));
+      const always = ['K', 'L', 'H', 'J'].filter(x => withF.length > 0 && withF.every(p => p.includes(x)));
+      return always.length === 1 ? `${always[0]} is chosen` : `AMBIGUOUS(${always.join('/')})`;
+    },
+    solution:
+      'F forces G by (i), and G bars K by (iv). Rule (iii) then requires at least one of K and L, so '
+      + 'it must be L. The third seat goes to H or J, so neither of those is forced.',
+  },
+  {
+    set: 'TEAM', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'In how many of the valid panels is K a member?',
+    answer: () => TEAM.solve().filter(p => p.includes('K')).length,
+    solution: 'K excludes G by (iv), and therefore excludes F too, since F would drag G in.',
+  },
+  {
+    set: 'TEAM', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'hard',
+    stem: 'Suppose rule (iv) were removed, so that G and K could serve together. How many panels would then be possible?',
+    answer: () => TEAM.solve({ dropIV: true }).length,
+    solution:
+      'Rules (i) to (iii) alone permit more panels; (iv) is what does most of the eliminating, which '
+      + 'is worth noticing when deciding whether a set is worth attempting.',
+  },
+
+  // ── Set 9: Data sufficiency ──
+  // Candidate spaces are declared and the verdict is COMPUTED from them.
+  {
+    set: 'DS', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'moderate',
+    stem: 'What is the value of the two-digit number N?\n\n  I.  N is a multiple of 13.\n  II. The sum of the digits of N is 8.',
+    answer: () => {
+      const candidates = [];
+      for (let n = 10; n <= 99; n += 1) candidates.push({ n, value: n });
+      return DS.verdict(
+        candidates,
+        (c) => c.n % 13 === 0,
+        (c) => String(c.n).split('').reduce((a, d) => a + Number(d), 0) === 8,
+      );
+    },
+    solution:
+      'I alone gives 13, 26, 39, 52, 65, 78 and 91 — not one value. II alone gives 17, 26, 35, 44, '
+      + '53, 62, 71 and 80 — also many. Together only 26 satisfies both, so both are needed and both '
+      + 'together suffice.',
+  },
+  {
+    set: 'DS', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'hard',
+    stem: 'A rectangle has integer sides. What is its area?\n\n  I.  Its perimeter is 20.\n  II. Its longer side is an even number.',
+    answer: () => {
+      const candidates = [];
+      for (let w = 1; w <= 20; w += 1) for (let h = w; h <= 20; h += 1) {
+        candidates.push({ w, h, value: w * h });
+      }
+      return DS.verdict(
+        candidates,
+        (c) => 2 * (c.w + c.h) === 20,
+        (c) => c.h % 2 === 0,
+      );
+    },
+    solution:
+      'I allows 1×9, 2×8, 3×7, 4×6 and 5×5 — areas 9, 16, 21, 24 and 25. II alone allows almost '
+      + 'anything. Together, the even-longer-side condition leaves 2×8 and 4×6, whose areas are 16 '
+      + 'and 24 — still two values. So even both together are not sufficient.',
+  },
+  {
+    set: 'DS', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'moderate',
+    stem: 'What is the value of the positive integer N?\n\n  I.  N² = 2916.\n  II. N is even.',
+    answer: () => {
+      const candidates = [];
+      for (let n = 1; n <= 200; n += 1) candidates.push({ n, value: n });
+      return DS.verdict(
+        candidates,
+        (c) => c.n * c.n === 2916,
+        (c) => c.n % 2 === 0,
+      );
+    },
+    solution:
+      'Since N is stated to be positive, I gives N = 54 and nothing else — sufficient on its own. II '
+      + 'allows every even number. The trap is treating I as insufficient because a square root is '
+      + 'usually ±, which the word "positive" has already ruled out.',
+  },
+  {
+    set: 'DS', skill: 'DILR.SKILL.DEDUCE', format: 'tita', difficulty: 'moderate',
+    stem: 'What is the value of x?\n\n  I.  x is a factor of 12.\n  II. x³ = 27.',
+    answer: () => {
+      const candidates = [];
+      for (let x = 1; x <= 30; x += 1) candidates.push({ x, value: x });
+      return DS.verdict(
+        candidates,
+        (c) => 12 % c.x === 0,
+        (c) => c.x ** 3 === 27,
+      );
+    },
+    solution:
+      'I leaves 1, 2, 3, 4, 6 and 12. II gives x = 3 outright, so II alone is sufficient and I is '
+      + 'not. Note that I is consistent with II but adds nothing to it.',
+  },
+
+  // ── Set 10: Chart ──
+  // Every answer here is a comparison or a count, so reading the bars to the nearest
+  // gridline is enough. A question needing an exact value would be unanswerable
+  // from a chart, which is the whole reason a table is not a substitute.
+  {
+    set: 'CHART', skill: 'DILR.SKILL.READ', format: 'mcq', difficulty: 'easy',
+    stem: 'In which month were the most units of Alpha sold?',
+    options: ['March', 'April', 'May', 'June'],
+    answer: () => {
+      const i = CHART.alpha.indexOf(Math.max(...CHART.alpha));
+      return ['January','February','March','April','May','June'][i];
+    },
+    solution: 'Alpha’s tallest bar is the last one, in June.',
+  },
+  {
+    set: 'CHART', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'In how many of the six months did Alpha outsell Beta?',
+    answer: () => CHART.alpha.filter((a, i) => a > CHART.beta[i]).length,
+    solution:
+      'Compare the paired bars month by month. Alpha is taller in April, May and June, and also in '
+      + 'March. Beta leads only in January and February.',
+  },
+  {
+    set: 'CHART', skill: 'DILR.SKILL.READ', format: 'mcq', difficulty: 'moderate',
+    stem: 'Between which two consecutive months did Beta fall the most steeply?',
+    options: ['Jan to Feb', 'Feb to Mar', 'Apr to May', 'May to Jun'],
+    answer: () => {
+      const labels = ['Jan to Feb', 'Feb to Mar', 'Mar to Apr', 'Apr to May', 'May to Jun'];
+      let worst = 0, at = 0;
+      for (let i = 0; i < CHART.beta.length - 1; i += 1) {
+        const drop = CHART.beta[i] - CHART.beta[i + 1];
+        if (drop > worst) { worst = drop; at = i; }
+      }
+      return labels[at];
+    },
+    solution:
+      'Beta’s steepest fall is the last step, from May to June — a drop of about half. The Feb-to-Mar '
+      + 'fall is large too, which is why the two need comparing rather than eyeballing one.',
+  },
+  {
+    set: 'CHART', skill: 'DILR.SKILL.CALC', format: 'mcq', difficulty: 'hard',
+    stem: 'Taking the six months together, the total units sold of Alpha compared with Beta was closest to:',
+    // Options are far apart so that reading each bar to the nearest gridline cannot
+    // change which one is right.
+    options: ['about 30% less', 'about the same', 'about 15% more', 'about 50% more'],
+    answer: () => {
+      const a = CHART.alpha.reduce((x, y) => x + y, 0);
+      const b = CHART.beta.reduce((x, y) => x + y, 0);
+      const pct = ((a - b) / b) * 100;
+      const bands = [
+        { label: 'about 30% less', at: -30 }, { label: 'about the same', at: 0 },
+        { label: 'about 15% more', at: 15 }, { label: 'about 50% more', at: 50 },
+      ];
+      return bands.reduce((best, x) => (Math.abs(x.at - pct) < Math.abs(best.at - pct) ? x : best)).label;
+    },
+    solution:
+      'Alpha totals roughly 360 thousand and Beta roughly 320 thousand, so Alpha is ahead by rather '
+      + 'more than a tenth. The options are spread widely on purpose: reading each bar to the nearest '
+      + 'gridline is precise enough to choose between them.',
+  },
+
+  // ── Set 11: Scatter ──
+  {
+    set: 'SCATTER', skill: 'DILR.SKILL.READ', format: 'mcq', difficulty: 'easy',
+    stem: 'The relationship between hours studied and score is best described as:',
+    options: [
+      'strongly negative',
+      'broadly positive, though not perfectly so',
+      'perfectly linear',
+      'no relationship at all',
+    ],
+    answer: () => {
+      // Pearson correlation, computed rather than eyeballed.
+      const xs = SCATTER.points.map(p => p[0]), ys = SCATTER.points.map(p => p[1]);
+      const mx = xs.reduce((a,b)=>a+b,0)/xs.length, my = ys.reduce((a,b)=>a+b,0)/ys.length;
+      const cov = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
+      const sx = Math.sqrt(xs.reduce((s,x)=>s+(x-mx)**2,0)), sy = Math.sqrt(ys.reduce((s,y)=>s+(y-my)**2,0));
+      const r = cov/(sx*sy);
+      if (r > 0.95) return 'perfectly linear';
+      if (r > 0.4) return 'broadly positive, though not perfectly so';
+      if (r < -0.4) return 'strongly negative';
+      return 'no relationship at all';
+    },
+    solution:
+      'Scores rise with hours overall, but the scatter is loose and at least one student scores highly '
+      + 'on few hours. "Perfectly linear" would require every point on one straight line.',
+  },
+  {
+    set: 'SCATTER', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'How many students scored above 60 while studying fewer than 8 hours a week?',
+    answer: () => SCATTER.points.filter(([h, s]) => s > 60 && h < 8).length,
+    solution:
+      'Look in the upper-left region: above the 60 line and left of 8 hours. Two students qualify — '
+      + 'one at 7 hours and one who scored 85 on only 6.',
+  },
+  {
+    set: 'SCATTER', skill: 'DILR.SKILL.COUNT', format: 'tita', difficulty: 'moderate',
+    stem: 'How many students studied 9 hours or more per week?',
+    answer: () => SCATTER.points.filter(([h]) => h >= 9).length,
+    solution: 'Count the points at or to the right of 9 on the horizontal axis.',
+  },
+  {
+    set: 'SCATTER', skill: 'DILR.SKILL.DEDUCE', format: 'mcq', difficulty: 'hard',
+    stem: 'One student is a clear outlier from the general pattern. That student:',
+    options: [
+      'studied the most hours but scored lowest',
+      'scored far higher than others who studied similar hours',
+      'studied the fewest hours and scored highest',
+      'scored exactly the average',
+    ],
+    // Identified as the point with the largest positive residual from the fitted line.
+    answer: () => {
+      const xs = SCATTER.points.map(p => p[0]), ys = SCATTER.points.map(p => p[1]);
+      const n = xs.length;
+      const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+      const slope = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0) / xs.reduce((s,x)=>s+(x-mx)**2,0);
+      const intercept = my - slope*mx;
+      let worst = -Infinity, idx = -1;
+      SCATTER.points.forEach(([x,y],i)=>{ const r = y-(slope*x+intercept); if (r>worst){worst=r;idx=i;} });
+      const [h] = SCATTER.points[idx];
+      const sameish = SCATTER.points.filter(([x],i)=> i!==idx && Math.abs(x-h)<=1);
+      return sameish.length > 0 && sameish.every(([,y]) => y < SCATTER.points[idx][1])
+        ? 'scored far higher than others who studied similar hours'
+        : 'AMBIGUOUS';
+    },
+    solution:
+      'The student at 6 hours scoring 85 sits well above the trend — the other student at 6 hours '
+      + 'scored 50. Nobody studied a lot and scored badly, so the first option describes no one.',
+  },
+
+  // ── Set 12: Hybrid ──
+  {
+    set: 'HYBRID', skill: 'DILR.SKILL.DEDUCE', format: 'mcq', difficulty: 'moderate',
+    stem: 'Which item did Dev buy?',
+    options: ['the lamp', 'the mirror', 'the rug', 'It cannot be determined'],
+    answer: () => `the ${HYBRID.solve()[0].itemOf.Dev}`,
+    solution:
+      '(iv) makes the lamp ₹400, and (i) then makes the mirror ₹700 and the rug ₹900. Dev spent ₹700 '
+      + 'by (ii), so Dev bought the mirror.',
+  },
+  {
+    set: 'HYBRID', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'moderate',
+    stem: 'How much, in rupees, did Farah spend?',
+    answer: () => { const s = HYBRID.solve()[0]; return s.price[s.itemOf.Farah]; },
+    solution:
+      'Esha did not buy the cheapest item by (iii), and Dev took the ₹700 mirror, so Esha bought the '
+      + '₹900 rug and Farah the ₹400 lamp.',
+  },
+  {
+    set: 'HYBRID', skill: 'DILR.SKILL.DEDUCE', format: 'mcq', difficulty: 'easy',
+    stem: 'Who bought the rug?',
+    options: ['Dev', 'Esha', 'Farah', 'It cannot be determined'],
+    answer: () => HYBRID.solve()[0].boughtBy.rug,
+    solution: 'The rug is the most expensive at ₹900, and only Esha can have taken it.',
+  },
+  {
+    set: 'HYBRID', skill: 'DILR.SKILL.CALC', format: 'tita', difficulty: 'hard',
+    stem: 'By how many rupees did the most expensive purchase exceed the cheapest?',
+    answer: () => { const p = HYBRID.solve()[0].price; const v = Object.values(p); return Math.max(...v) - Math.min(...v); },
+    solution:
+      '₹900 for the rug against ₹400 for the lamp, a difference of ₹500. Note this needs no knowledge '
+      + 'of who bought what — a question worth spotting as cheap before spending time on the grid.',
+  },
 ];
 
 // ─── Assertions ──────────────────────────────────────────────────────────────
@@ -650,14 +1099,37 @@ function verifyContent() {
   // A set with more than one solution is worse than a wrong one: it looks fine and
   // marks a correctly-reasoning student wrong. Every set that HAS a solution space
   // gets this check.
-  for (const key of ['ARRANGE', 'BINARY', 'GAMES', 'SCHEDULE']) {
+  for (const key of ['ARRANGE', 'BINARY', 'GAMES', 'SCHEDULE', 'HYBRID']) {
     const solutions = setByKey[key].solve();
     assert(solutions.length === 1,
       `${key}: expected exactly 1 solution, found ${solutions.length} — an ambiguous set must not ship`);
-    const shown = key === 'GAMES'
-      ? JSON.stringify(solutions[0].results)
+    const shown = key === 'GAMES' ? JSON.stringify(solutions[0].results)
+      : key === 'HYBRID' ? JSON.stringify(solutions[0].itemOf)
       : JSON.stringify(solutions[0]);
     console.log(`  ok  ${key.padEnd(9)} unique solution: ${shown}`);
+  }
+
+  // TEAM is a counting set rather than a single-solution one, so what matters is
+  // that it has SOME valid panels — a set with none would be unanswerable.
+  const panels = TEAM.solve();
+  assert(panels.length > 0, 'TEAM: no valid panel exists — the rules are contradictory');
+  assert(panels.length < 20, 'TEAM: every panel is valid, so the rules constrain nothing');
+  console.log(`  ok  TEAM      ${panels.length} valid panels of 20 possible`);
+
+  // Charts must be renderable: the spec shape the migration requires, and enough
+  // spread that reading against gridlines is possible at all.
+  for (const key of ['CHART', 'SCATTER']) {
+    const spec = setByKey[key].chart_spec;
+    assert(['bar', 'line', 'scatter'].includes(spec.type), `${key}: unknown chart type '${spec.type}'`);
+    assert(Array.isArray(spec.series) && spec.series.length > 0, `${key}: no series`);
+    const ys = spec.series.flatMap(s => s.points.map(p => p.y));
+    assert(ys.every(y => Number.isFinite(y) && y >= 0), `${key}: non-finite or negative y value`);
+    if (spec.yMax !== undefined) {
+      assert(Math.max(...ys) <= spec.yMax,
+        `${key}: a value exceeds yMax ${spec.yMax} and would be drawn outside the plot`);
+    }
+    console.log(`  ok  ${key.padEnd(9)} ${spec.type} chart, ${spec.series.length} series, `
+      + `${ys.length} points, peak ${Math.max(...ys)}`);
   }
 
   // These two are arithmetic over declared data — nothing to be ambiguous about, but
@@ -716,6 +1188,24 @@ function verifyContent() {
     }
   }
 
+  /*
+   * NO SET MAY HAVE THE SAME ANSWER TO EVERY QUESTION.
+   *
+   * The first version of the data-sufficiency set answered 3 to all four questions,
+   * so a student could have scored full marks by typing 3 four times without reading
+   * anything. That is not a hard question with an unlucky pattern — it is a set that
+   * measures nothing, and it would have looked entirely fine in the output.
+   */
+  for (const key of SETS.map(s => s.key)) {
+    const answers = QUESTIONS.filter(q => q.set === key)
+      .map(q => (q.format === 'mcq' ? q._correctOption : q._correctAnswer));
+    if (answers.length < 3) continue;
+    assert(new Set(answers.map(String)).size > 1,
+      `${key}: every question has the same answer (${answers[0]}) — the set can be passed without `
+      + `reading it`);
+  }
+  console.log(`  ok  no set is answerable by repeating one response`);
+
   // All four DILR skills must appear, since these are the first rows ever to carry
   // one and a gap would leave a permanently empty analytics bucket.
   const skills = new Set(QUESTIONS.map(q => q.skill));
@@ -760,6 +1250,18 @@ const PAPERS = [
     active: true,
     sets: ['GAMES', 'SCHEDULE', 'VENN', 'NETWORK'],
   },
+  {
+    code: 'ASHA.PRACTICE.DILR.03',
+    title: 'ASHA Practice — DILR 3',
+    description:
+      'Five sets — a selection problem, data sufficiency, a bar chart, a scatter plot '
+      + 'and a pricing grid. This is the closest of the three to a real DILR section, '
+      + 'which is five sets in 40 minutes.',
+    is_full_mock: false,
+    time_limit_min: 40,
+    active: true,
+    sets: ['TEAM', 'DS', 'CHART', 'SCATTER', 'HYBRID'],
+  },
 ];
 
 async function main() {
@@ -797,7 +1299,12 @@ async function main() {
       source_id: source.id,
       exam_id: exam.id,
       section_id: section.id,
-      kind: 'set_data',
+      // A chart exhibit carries its spec and renders as a real graphic; everything
+      // else is set_data and keeps its whitespace. Migration 0010 enforces that the
+      // kind and the spec agree, so a mismatch fails at insert rather than showing a
+      // blank exhibit mid-run.
+      kind: s.chart_spec ? 'chart' : 'set_data',
+      chart_spec: s.chart_spec ?? null,
       title: s.title,
       body: s.body,
       passage_domain_id: null,
@@ -871,7 +1378,7 @@ async function main() {
 
   for (const { paper, count } of seededPapers) {
     const { data: linked, error: le } = await db.from('paper_items')
-      .select('question_number, question_items(response_format, correct_option, correct_answer, options, stimulus_id, question_stimuli(kind, body, archetype_id))')
+      .select('question_number, question_items(response_format, correct_option, correct_answer, options, stimulus_id, question_stimuli(kind, body, archetype_id, chart_spec))')
       .eq('paper_id', paper.id).order('question_number');
     if (le) throw le;
 
@@ -896,14 +1403,28 @@ async function main() {
       const q = row.question_items;
       const stim = Array.isArray(q.question_stimuli) ? q.question_stimuli[0] : q.question_stimuli;
       assert(q.stimulus_id && stim, `db ${paper.code} Q${row.question_number}: no set attached`);
-      assert(stim.kind === 'set_data',
+      assert(['set_data', 'chart'].includes(stim.kind),
         `db ${paper.code} Q${row.question_number}: stimulus kind is '${stim.kind}'`);
       assert(stim.archetype_id !== null,
         `db ${paper.code} Q${row.question_number}: set has no archetype tagged`);
-      // Line breaks must survive the round trip, or the runner renders a table as one
-      // unreadable run-on line.
-      assert(stim.body.includes('\n'),
-        `db ${paper.code} Q${row.question_number}: set data lost its line breaks`);
+
+      if (stim.kind === 'chart') {
+        // A chart with no spec renders as an empty box mid-run, which is the worst
+        // way to discover the problem.
+        assert(stim.chart_spec && Array.isArray(stim.chart_spec.series)
+          && stim.chart_spec.series.length > 0,
+          `db ${paper.code} Q${row.question_number}: chart has no usable spec`);
+        const pts = stim.chart_spec.series.flatMap(s => s.points ?? []);
+        assert(pts.length > 0 && pts.every(p => Number.isFinite(Number(p.y))),
+          `db ${paper.code} Q${row.question_number}: chart spec survived the round trip malformed`);
+      } else {
+        // Line breaks must survive the round trip, or the runner renders a table as
+        // one unreadable run-on line.
+        assert(stim.body.includes('\n'),
+          `db ${paper.code} Q${row.question_number}: set data lost its line breaks`);
+        assert(stim.chart_spec === null,
+          `db ${paper.code} Q${row.question_number}: non-chart exhibit carries a chart spec`);
+      }
       if (q.response_format === 'mcq') {
         assert(q.correct_option >= 1 && q.correct_option <= q.options.length,
           `db ${paper.code} Q${row.question_number}: mcq key out of range`);

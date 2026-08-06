@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import PaperRunner from "./PaperRunner";
+import type { ChartSpec } from "./StimulusChart";
 import { one } from "@/lib/supabase/relations";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -57,7 +58,7 @@ export default async function PracticeRunPage({
   // Still NO correct_option, correct_answer or solution.
   const { data: items } = await supabase
     .from("paper_items")
-    .select("question_number, question_items(id, stem, response_format, options, stimulus_id, question_stimuli(title, body, kind))")
+    .select("question_number, question_items(id, stem, response_format, options, stimulus_id, question_stimuli(title, body, kind, chart_spec))")
     .eq("paper_id", attempt.paper_id)
     .eq("section_id", sectionAttempt.section_id)
     .order("question_number");
@@ -71,8 +72,8 @@ export default async function PracticeRunPage({
         options: string[] | null;
         stimulus_id: string | null;
         question_stimuli:
-          | { title: string | null; body: string; kind: string }
-          | { title: string | null; body: string; kind: string }[]
+          | { title: string | null; body: string; kind: string; chart_spec: unknown }
+          | { title: string | null; body: string; kind: string; chart_spec: unknown }[]
           | null;
       } | null;
       if (!q) return null;
@@ -93,6 +94,9 @@ export default async function PracticeRunPage({
         // mono face, because a DILR exhibit is usually a table or a list of
         // conditions and prose reflow would destroy it.
         stimulusKind: stim?.kind ?? null,
+        // Only present for kind = 'chart'; migration 0010 enforces that pairing, so
+        // a chart can never arrive without its spec or a passage with one.
+        stimulusChart: (stim?.chart_spec ?? null) as ChartSpec | null,
       };
     })
     .filter((q): q is NonNullable<typeof q> => q !== null);

@@ -2,6 +2,40 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-05 — Charts: why a table is not a substitute, and why a spec is not markup
+
+Two DILR archetypes — chart interpretation and scatter/correlation — resisted text. The shortcut was obvious and wrong.
+
+### A table of values is a different question, not an easier one
+
+A chart question tests reading a graphic. Given exact figures instead, the same question tests arithmetic. That is not a fidelity compromise, it is a **mis-tagged** one: seeding a table as `DILR.ARCH.CHART` would attach a false archetype to every attempt row derived from it, and the set-selection playbook would then report a strength in chart sets the student may not have. The archetype tag is the raw material of ASHA's signature feature, so a wrong one is worse than no content for that archetype at all.
+
+Hence migration `0010` and a real SVG renderer.
+
+### Structured spec, never stored markup
+
+The quicker implementation is SVG in `body`, rendered with `dangerouslySetInnerHTML`. It works today. It is also an injection hole waiting for a schedule: `content_sources.kind = 'private'` is **reserved** for a student's own material, and the moment that becomes writable, stored markup rendered as HTML is user-supplied HTML executing inside another page.
+
+A structured spec rendered by ASHA's own component cannot carry script regardless of who wrote the row. The spec is deliberately narrow — bar, line, scatter, named series of x/y points — and should not grow into a general charting language.
+
+### Chart marks carry no printed values
+
+Labelling each bar with its figure would undo the whole point, reintroducing the arithmetic-not-reading problem inside the honest implementation. So values are read against gridlines and **the questions carry the burden**: comparisons, counts, and one approximation whose four options are spread far enough apart that gridline precision decides between them. A chart question requiring an exact value would be unanswerable, and writing one is the mistake this decision exists to prevent.
+
+### Verified by decoding the render, not by looking at it
+
+The browser pane could not be screenshotted, so each bar's height was instead read back out of the rendered SVG and decoded through the plot geometry. All twelve recovered values reproduce the source data exactly and every bar shares the baseline. That is a stronger check than eyeballing a screenshot, which would have confirmed only that *something* was drawn.
+
+## 2026-08-05 — The data-sufficiency set that could be passed without reading it
+
+The first version of the DS set answered **3 to all four questions**. A student could have scored full marks by typing `3` four times.
+
+Worth recording because of *how* it failed: not with an error, but with four lines of `ok` in the seed output. Every individual question was correct, well-formed and correctly keyed. The set as a whole measured nothing.
+
+This is the same shape as the ambiguous arrangement question caught the day before, and as the `?? 40` fabricated time limit before that — **content and code that are locally valid and globally wrong**. Per-item checks cannot see it; only a check over the whole collection can.
+
+Fixed by rewriting three of the four so the answers span all four verdicts, plus a standing assertion that no set may have the same answer to every question. The assertion is cheap and would have caught it on the first run.
+
 ## 2026-08-05 — DILR practice is question-level, unlike DILR logging
 
 The two flows record different things because they *can* record different things, and the difference is worth stating rather than looking like an inconsistency.
