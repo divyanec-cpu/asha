@@ -2,6 +2,28 @@
 
 Append-only, newest first. Records *why* a non-obvious choice was made, so a future reader doesn't undo it by accident.
 
+## 2026-08-06 — The tagline changed tense, and only its tense
+
+*"You've taken the mock. Now find out where you stand."* → **"Take the mock. Find out where you stand."**
+
+### What was actually wrong
+
+Not the promise — the **presupposition**. "You've taken" is past perfect, and it quietly asserted that the mock had already happened, somewhere that was not ASHA. That was exactly right for a wrap-around instrument with no content of its own, and it stopped being true the day ASHA began serving its own papers. A student arriving at the sign-in screen after being told ASHA has full-length mocks would read a line implying it does not.
+
+The imperative covers both routes without committing to either. Take it on SimCAT, take it here — either way the second clause is the offer, and the second clause is untouched.
+
+### What deliberately did not change
+
+**The positioning.** ASHA still measures rather than teaches, still refuses to rank, still computes no percentile. Hard product rules 1 and 3–7 are unaffected, and rule 2 was already amended on 2026-08-04 to permit original content. This is a tense correction to a sentence whose meaning drifted out from under it, not a repositioning.
+
+**"Find out where you stand"** is the instrument claim — the sextant taking a position fix — and it is the half that carries the product. Rewriting *that* would have been the change worth arguing about. Nobody proposed it.
+
+### Why it was flagged rather than simply fixed
+
+The tagline is stated in CLAUDE.md, and the constitution's opening rule is that a change contradicting it is wrong until the file is amended in the same commit. Three screens had already been corrected for exactly this drift — home, sign-in, `/account` — and each of those was copy the constitution does not fix. This one it does, so it waited for a decision even though the defect was identical.
+
+Changed in four places: CLAUDE.md, `functional-spec.md`, the sign-in heading, and the page metadata used for search results and link previews. The changelog's quotation of the old wording is left alone, because that entry records what the screen said at the time.
+
 ## 2026-08-05 — Charts: why a table is not a substitute, and why a spec is not markup
 
 Two DILR archetypes — chart interpretation and scatter/correlation — resisted text. The shortcut was obvious and wrong.

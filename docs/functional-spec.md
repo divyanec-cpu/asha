@@ -8,7 +8,7 @@ A mock-test analytics companion for CAT aspirants. **ASHA does not teach and doe
 
 The instrument metaphor is the product rule. A sextant does not steer the ship — it takes a position fix. ASHA tells you where you are; the decisions stay yours.
 
-Tagline: *"You've taken the mock. Now find out where you stand."*
+Tagline: *"Take the mock. Find out where you stand."*
 
 ## Who uses it
 

@@ -185,9 +185,9 @@ export default function AuthFlow() {
           </div>
 
           <h1 className="text-[21px] leading-snug text-paper text-pretty">
-            You&rsquo;ve taken the mock.
+            Take the mock.
             <br />
-            Now find out where you stand.
+            Find out where you stand.
           </h1>
 
           {/*

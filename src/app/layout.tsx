@@ -25,7 +25,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "ASHA",
   description:
-    "You've taken the mock. Now find out where you stand. ASHA reads your own " +
+    "Take the mock. Find out where you stand. ASHA reads your own " +
     "attempt data across every mock you log and tells you what to change next — " +
     "with the sample size behind every claim.",
   applicationName: "ASHA",

@@ -6,7 +6,9 @@
 
 **ASHA** is a mock-test analytics companion for MBA-entrance aspirants in India. **CAT first.** GMAT and MAT are configuration, not v1.
 
-Tagline: *"You've taken the mock. Now find out where you stand."*
+Tagline: *"Take the mock. Find out where you stand."* *(Amended 2026-08-06 — previously "You've taken the mock. Now find out where you stand.")*
+
+The past tense presumed the mock had happened somewhere else, which stopped being true when ASHA started serving its own papers. The imperative covers both routes without committing to either, and the second clause — the instrument claim, and the actual promise — is untouched.
 
 **Positioning (never violate this):** ASHA is NOT a coaching app, NOT a teaching platform, and NOT a mock-test seller. It is a wrap-around instrument for students who already have mocks (SimCAT, AIMCAT, iCAT, Career Launcher, past papers) and already have teachers. The mocks test; the coaching teaches; ASHA reads *the student's own attempt data* across many mocks and tells them, with stated confidence, where they actually stand and what to change before the next one.
 
@@ -261,6 +263,8 @@ Any seeded content — taxonomy nodes, archetype definitions, revision-source su
 - Open items carried deliberately: the IP opinion on private mock upload; **legal review of the privacy policy and terms text**; a dedicated support address to replace the personal one; real-OTP verification on a physical phone; a signing keystore for a release APK.
 
 ## Amendment log
+
+- **2026-08-06** — **Tagline amended**: "You've taken the mock. Now find out where you stand." → **"Take the mock. Find out where you stand."** The past tense presumed the mock happened elsewhere, which ceased to be true once ASHA served its own papers. Positioning is unchanged — ASHA still measures rather than teaches or ranks. Reasoning in `docs/decisions.md`.
 
 - **2026-08-04** — **Hard product rule 2 amended**: "not a mock bank" → "never an *unlicensed shared* bank". ASHA may now serve practice questions, but only `original`, `licensed` (attributed, with expiry) or `private` (reserved) content, with provenance per item enforced by `content_sources` (migration `0009`). Prompted by the builder's decision to include practice tests, with a stated longer-term plan to license content from coaching centres. The absolute prohibition on unlicensed real exam items is unchanged. Reasoning in `docs/decisions.md`.
 
